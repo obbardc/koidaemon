@@ -211,6 +211,87 @@ def test_scroll(device, backend):
     ], [["mouse_abs", 0, 0.0, 0.0, -3, 0]]]
 
 
+
+def test_scroll_by_nothing_sends_nothing(device, backend):
+    backend.mouse_scroll(0)
+    assert device.controls == []
+
+
+# Relative mouse
+
+@pytest.fixture
+def relative(tmp_path, device, monkeypatch):
+    slept = []
+    monkeypatch.setattr(linkr.time, "sleep", slept.append)
+    backend = make_backend(tmp_path, device.url, mouse="relative", mouse_step=100)
+    backend.slept = slept
+    device.screen = (300, 200)
+    return backend
+
+
+def unpaced(events):
+    """The events without the delays between them, checking each is
+    followed by one."""
+    assert events[1::2] == [["delay", linkr.MOUSE_STEP_DELAY_MS]] * (len(events) // 2)
+    return events[0::2]
+
+
+def test_relative_settings(tmp_path):
+    with pytest.raises(ConfigError, match="mouse must be absolute or relative"):
+        make_backend(tmp_path, "https://linkr.lab", mouse="sideways")
+    for step in (0, 128):
+        with pytest.raises(ConfigError, match="mouse_step must be from 1 to 127"):
+            make_backend(tmp_path, "https://linkr.lab", mouse="relative", mouse_step=step)
+
+
+def test_relative_move_goes_by_the_corner(device, relative):
+    relative.mouse_move(250, 150)
+    assert device.snapshots == 1
+    [events] = device.controls
+    assert unpaced(events) == [
+        ["mouse_rel", 0, -127, -127, 0, 0], ["mouse_rel", 0, -127, -73, 0, 0],
+        ["mouse_rel", 0, -46, 0, 0, 0],
+        ["mouse_rel", 0, 100, 100, 0, 0], ["mouse_rel", 0, 100, 50, 0, 0],
+        ["mouse_rel", 0, 50, 0, 0, 0],
+    ]
+    # koid waits for the Linkr to play the events before it answers.
+    assert relative.slept == [6 * linkr.MOUSE_STEP_DELAY_MS / 1000]
+
+
+def test_relative_move_off_the_screen_stops_at_its_edge(device, relative):
+    relative.mouse_move(1000, -5)
+    moves = unpaced(device.controls[0])
+    assert sum(event[2] for event in moves) == -300 + 299
+    assert sum(event[3] for event in moves) == -200
+
+
+def test_relative_drag_moves_on_from_the_last_position(device, relative):
+    relative.mouse_move(10, 10)
+    relative.mouse_down("left")
+    relative.mouse_move(20, 5)
+    relative.mouse_up("left")
+    assert [unpaced(events) for events in device.controls[1:]] == [
+        [["mouse_rel", 1, 0, 0, 0, 0]],
+        [["mouse_rel", 1, 10, -5, 0, 0]],
+        [["mouse_rel", 0, 0, 0, 0, 0]],
+    ]
+
+
+def test_relative_drag_by_nothing_sends_nothing(device, relative):
+    relative.mouse_move(10, 10)
+    relative.mouse_down("left")
+    relative.mouse_move(10, 10)
+    assert len(device.controls) == 2
+
+
+def test_relative_click_and_scroll(device, relative):
+    relative.mouse_click("left", 1, None, None)
+    relative.mouse_scroll(2)
+    assert [unpaced(events) for events in device.controls] == [
+        [["mouse_rel", 1, 0, 0, 0, 0], ["mouse_rel", 0, 0, 0, 0, 0]],
+        [["mouse_rel", 0, 0, 0, -2, 0]],
+    ]
+
 # ----------------------------------------------------------------------
 # USB storage
 # ----------------------------------------------------------------------

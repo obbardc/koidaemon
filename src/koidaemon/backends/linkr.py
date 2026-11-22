@@ -26,6 +26,8 @@ Configuration:
     ca_file = "linkr.pem"               # optional; trust this certificate
     verify_tls = true                   # optional; false skips the check
     timeout = 30                        # optional; seconds per request
+    mouse = "absolute"                  # optional; or "relative"
+    mouse_step = 16                     # optional; pixels per relative event, 1 to 127
 """
 
 from __future__ import annotations
@@ -52,6 +54,16 @@ TEXT_PAUSE_MS = 1000
 # Wheel steps go from -this to this.
 MAX_WHEEL_STEP = 20
 MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04}
+MOUSE_MODES = ("absolute", "relative")
+# A relative event moves the pointer by at most this on each axis: the
+# Linkr cuts a longer move short.
+MAX_MOUSE_STEP = 127
+# How far each relative event moves by default.  Small steps keep a
+# target's pointer acceleration from scaling them much.
+MOUSE_STEP = 16
+# The Linkr loses relative events sent closer together than about 10 ms,
+# so each one is followed by a delay of this, in milliseconds.
+MOUSE_STEP_DELAY_MS = 20
 
 # Pause between the clicks of a double click.
 CLICK_INTERVAL = 0.05
@@ -94,7 +106,15 @@ class LinkrBackend(Backend):
         password_file = settings.get_path("password_file", None)
         ca_file = settings.get_path("ca_file", None)
         verify_tls = settings.get_bool("verify_tls", True)
+        self.mouse_mode = settings.get_str("mouse", "absolute")
+        self.mouse_step = settings.get_int("mouse_step", MOUSE_STEP)
         settings.finish()
+        if self.mouse_mode not in MOUSE_MODES:
+            raise ConfigError("target %r: mouse must be %s"
+                              % (target, " or ".join(MOUSE_MODES)))
+        if not 1 <= self.mouse_step <= MAX_MOUSE_STEP:
+            raise ConfigError("target %r: mouse_step must be from 1 to %d"
+                              % (target, MAX_MOUSE_STEP))
         self._tls = tls.client_context(ca_file, verify_tls)
         # Disk images need the Linkr's own login, so only with a password.
         self.storage: LinkrStorage | None = None
@@ -108,9 +128,12 @@ class LinkrBackend(Backend):
             self.capabilities = self.capabilities | {commands.STORAGE_STICK}
         # The last screen size seen in a snapshot, to place the pointer.
         self._screen: tuple[int, int] | None = None
-        # Every mouse event says the buttons held and where the pointer is.
+        # Every mouse event says the buttons held and, when absolute,
+        # where the pointer is, as fractions of the screen.
         self._buttons = 0
         self._position = (0.0, 0.0)
+        # Where a relative mouse last left the pointer, in pixels.
+        self._pixels = (0, 0)
 
     @property
     def resource(self) -> str:
@@ -226,13 +249,63 @@ class LinkrBackend(Backend):
     # ------------------------------------------------------------------
 
     def _mouse_event(self, wheel: int = 0) -> list:
+        if self.mouse_mode == "relative":
+            return ["mouse_rel", self._buttons, 0, 0, wheel, 0]
         x, y = self._position
         return ["mouse_abs", self._buttons, x, y, wheel, 0]
 
+    def _mouse_control(self, events: list[list]) -> None:
+        """Send mouse events, spaced out if they are relative.
+
+        A relative mouse loses events sent too close together, so each is
+        followed by a delay.  The Linkr answers before it has played them,
+        so wait them out too, or a snapshot straight after a move would
+        catch the pointer on its way.
+        """
+        if not events:
+            # Nothing to do, and the Linkr refuses an empty list.
+            return
+        if self.mouse_mode != "relative":
+            self._control(events)
+            return
+        paced: list[list] = []
+        for event in events:
+            paced += [event, ["delay", MOUSE_STEP_DELAY_MS]]
+        self._control(paced)
+        time.sleep(len(events) * MOUSE_STEP_DELAY_MS / 1000)
+
+    def _relative_moves(self, dx: int, dy: int, step: int) -> list[list]:
+        """Relative events that move by (dx, dy), at most step at a time."""
+        events = []
+        while dx or dy:
+            x = max(-step, min(step, dx))
+            y = max(-step, min(step, dy))
+            events.append(["mouse_rel", self._buttons, x, y, 0, 0])
+            dx -= x
+            dy -= y
+        return events
+
     def mouse_move(self, x: int, y: int) -> None:
         width, height = self._screen_size()
-        self._position = (to_fraction(x, width), to_fraction(y, height))
-        self._control([self._mouse_event()])
+        if self.mouse_mode == "absolute":
+            self._position = (to_fraction(x, width), to_fraction(y, height))
+            self._control([self._mouse_event()])
+            return
+        x = min(max(x, 0), width - 1)
+        y = min(max(y, 0), height - 1)
+        if self._buttons:
+            # Dragging: going by the corner would drag there too, so move
+            # on from where the last move left the pointer.
+            events = self._relative_moves(x - self._pixels[0], y - self._pixels[1],
+                                          self.mouse_step)
+        else:
+            # A relative mouse cannot tell where the pointer is, so push
+            # it into the top-left corner first, by more than the whole
+            # screen, and count from there.
+            events = self._relative_moves(-width, -height, MAX_MOUSE_STEP) \
+                + self._relative_moves(x, y, self.mouse_step)
+        self._mouse_control(events)
+        self._pixels = (x, y)
 
     def mouse_click(self, button: str, count: int, x: int | None, y: int | None) -> None:
         if x is not None:
@@ -244,15 +317,15 @@ class LinkrBackend(Backend):
             self._buttons |= bit
             down = self._mouse_event()
             self._buttons &= ~bit
-            self._control([down, self._mouse_event()])
+            self._mouse_control([down, self._mouse_event()])
 
     def mouse_down(self, button: str) -> None:
         self._buttons |= MOUSE_BUTTONS[button]
-        self._control([self._mouse_event()])
+        self._mouse_control([self._mouse_event()])
 
     def mouse_up(self, button: str) -> None:
         self._buttons &= ~MOUSE_BUTTONS[button]
-        self._control([self._mouse_event()])
+        self._mouse_control([self._mouse_event()])
 
     def mouse_scroll(self, notches: int) -> None:
         # koid's positive notches scroll up, as with a USB wheel; the
@@ -264,7 +337,7 @@ class LinkrBackend(Backend):
             step = max(-MAX_WHEEL_STEP, min(MAX_WHEEL_STEP, remaining))
             events.append(self._mouse_event(-step))
             remaining -= step
-        self._control(events)
+        self._mouse_control(events)
 
 
     # ------------------------------------------------------------------

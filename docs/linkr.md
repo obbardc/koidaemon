@@ -5,14 +5,16 @@ keyboard, mouse and screen go through its public API, and disk images
 through the API its own web interface uses.
 
 USB storage has been tried with a Linkr running firmware 1.6.0, reached
-over USB-C, with a Linux laptop as the target. The keyboard, mouse and
-snapshots have not been tried on a real Linkr yet: they follow Radxa's
+over USB-C, with a Linux laptop as the target. Status, snapshots, keys
+and the relative mouse have been tried with a Linkr on Ethernet in front
+of a ThinkPad T14s Gen 7 in ThinkPad Setup; typing, the absolute mouse
+and the wheel have not, and follow Radxa's
 [developer documentation](https://docs.radxa.com/en/linkr/linkr/develop-guide).
 
 | | |
 |---|---|
 | Keyboard | yes; text only as ASCII, tab and newline |
-| Mouse | yes, absolute pixels |
+| Mouse | yes, absolute pixels, or relative moves for targets that ignore an absolute mouse |
 | Snapshot | yes; the Linkr sends JPEG, which koid turns into PNG unless asked not to |
 | USB storage | yes, as a USB stick the target can write to, with the Linkr's password |
 
@@ -28,6 +30,8 @@ password_file = "/run/secrets/linkr-password"   # optional; ditto
 ca_file = "linkr.pem"                # optional; trust this certificate
 verify_tls = true                    # optional; default true
 timeout = 30                         # optional; seconds per request
+mouse = "absolute"                   # optional; or "relative"
+mouse_step = 16                      # optional; pixels per relative event, 1 to 127
 ```
 
 The API takes an access token rather than the Linkr's password. Make one
@@ -53,6 +57,7 @@ Every request carries `Authorization: token TOKEN`.
 | `keyboard.type` | `["text", ...]` events of at most 30 characters, with `["delay", 1000]` between them |
 | `keyboard.press`, `.down`, `.up` | `["keyboard", code, pressed]`, with browser key codes |
 | `mouse.*` | `["mouse_abs", buttons, x, y, wheel, 0]`, with x and y from 0 to 1, and a wheel step of at most 20 that scrolls down when positive (the opposite of koid's notches) |
+| `mouse.*`, with `mouse = "relative"` | `["mouse_rel", buttons, dx, dy, wheel, 0]`, each followed by `["delay", 20]`, with a move of at most 127 pixels on each axis |
 
 Every event goes to `POST /api/public/control` as `{"events": [...]}`.
 Radxa advise a pause of about a second after every 30 or so characters
@@ -64,6 +69,37 @@ converts pixels with the size of the last snapshot, taking one first if it
 has none. `status` reports that size, and no video until koid has taken a
 snapshot. Each mouse event says which buttons are held and where the
 pointer is, so koid keeps both.
+
+## Relative mouse
+
+A Linkr is an absolute mouse by default, which puts the pointer exactly
+where asked, but some firmware only follows a relative mouse: ThinkPad
+Setup on a T14s Gen 7 ignores the absolute mouse and follows the
+relative one. For those, set `mouse = "relative"`.
+
+As with the NanoKVM-USB, a relative mouse cannot say where the pointer
+is, so for every `mouse.move` and every click with a position koid first
+moves the pointer up and left by more than the whole screen, then moves
+it to the position in `mouse_step` steps. The position is only right if
+the target moves its pointer one pixel for each pixel asked (ThinkPad
+Setup does) and has no pointer acceleration; while a button is held, a
+move goes on from where the last one left the pointer, so that a drag
+does not drag to the corner. See [nanokvm-usb.md](nanokvm-usb.md) for
+more.
+
+What a real Linkr does with relative events, tried in ThinkPad Setup:
+
+- It cuts a move of more than 127 pixels on an axis short to 127, so
+  koid never asks for more.
+- It loses events sent closer together than about 10 ms: of 40 events
+  sent with no delay or with 5 ms between them, some went missing, and
+  with 10 ms or more none did. koid puts a delay of 20 ms after each.
+- It answers a request before playing its events, so koid waits for
+  those delays before it answers too. Otherwise a snapshot taken straight
+  after a move would catch the pointer on its way.
+
+So a move across a 1280x800 screen in the default 16-pixel steps takes
+about two seconds.
 
 ## USB storage
 

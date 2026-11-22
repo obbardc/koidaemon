@@ -37,10 +37,16 @@ packets and got no DHCP lease.
       a second even with a delay of 2000 in it)
 - [ ] `keyboard.press`, `.down`, `.up` with browser key codes, including
       ctrl+alt+delete
-- [ ] `mouse.move` and clicks land where they should. ThinkPad Setup
-      ignores `mouse_abs`, as it does the NanoKVM-USB's absolute mouse
+- [ ] `mouse.move` and clicks land where they should with the absolute
+      mouse. ThinkPad Setup ignores `mouse_abs`, as it does the
+      NanoKVM-USB's absolute mouse, so this needs an OS with a pointer;
+      and whether a click's press and release need a delay between them,
+      as relative events do
+- [x] `mouse = "relative"` in ThinkPad Setup: moves are 1:1, clicks land
+      on the pixel asked, a move of more than 127 is cut to 127, and
+      events closer together than about 10 ms are lost (docs/linkr.md)
 - [ ] `mouse.scroll`: does a positive `wheelV` scroll down, as Radxa's
-      own client says?
+      own client says? ThinkPad Setup ignored the wheel either way
 - [x] USB storage over the private API (docs/linkr.md): login, list,
       space, upload over `/ws`, mount, unmount and delete, with a 4 MiB
       image and nothing on the Linkr's USB side
