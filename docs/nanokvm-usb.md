@@ -12,10 +12,11 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
 - in front of a Radxa Dragon Q8B: snapshots, and the keyboard in the
   board's UEFI setup menus and UEFI Shell, which has no pointer;
 - in front of a Qualcomm RB3gen2 running Debian with GNOME, at the GDM
-  login screen: snapshots at 1920x1080, single left clicks, which land on
-  the pixel aimed at in the snapshot, and typing mixed-case text with
-  shifted symbols. Drags, scrolling and the other buttons have not been
-  tried yet.
+  login screen and in a session: snapshots at 1920x1080 and 1280x720;
+  clicks, double clicks and drags, which land on the pixel aimed at in
+  the snapshot; all five buttons and the wheel; shift held across a
+  click; typing mixed-case text with shifted symbols; media and system
+  keys; the relative mouse; and `kvm.reset`.
 
 | | |
 |---|---|
@@ -97,6 +98,11 @@ arrow keys sent back to back, and some at 20 ms apart. So koid leaves
 `key_interval` (50 ms) after every report, which makes typing take about
 a tenth of a second a character. Raise it if keys still go missing.
 
+Linux does not need the pause: in a GNOME session on the RB3gen2, text
+typed with `key_interval = 0` came through whole, at about 13 ms a
+character instead of 110 ms. Set it to 0 for a target that will only
+be driven once Linux is running.
+
 ## The chip's settings
 
 `status` has a `chip` object with how the CH9329 is set up, as Sipeed
@@ -107,15 +113,28 @@ left it:
 ```
 
 `mode` and `serial_mode` are the chip's own numbers. `usb_id` and the
-strings are what the target sees its keyboard and mouse as. If the chip
-cannot be asked, `chip` is `{"error": "..."}` and the rest of `status`
-still stands.
+strings are what the chip is set to call its keyboard and mouse. The
+strings and the vendor ID are what the target sees, but the RB3gen2
+saw the product ID as `3302`, 0x200 more than the setting, presumably
+changed by the chip's mode. If the chip cannot be asked, `chip` is
+`{"error": "..."}` and the rest of `status` still stands.
 
 koid cannot change these settings or put the chip back to its factory
 settings, on purpose. The chip's factory baud rate is 9600, and Sipeed
 set the NanoKVM-USB's to 57600, so going back to factory settings would
 leave koid, and Sipeed's own client, unable to talk to it until it was
 set again. `kvm.reset` only restarts the chip, which keeps its settings.
+
+On a running target, `kvm.reset` takes about 0.7 seconds, and the
+target sees the keyboard and mouse unplugged and plugged in again. It
+can take another second or two to find them again, so check `status`
+for `usb_connected` before typing.
+
+The target sees the media keys and the system keys (`power`, `sleep`,
+`wake`) as two more input devices beside the keyboard. On the RB3gen2
+the system keys' device has no `/dev/input/by-id/` link, only
+`/dev/input/eventN`, presumably because its name would clash with
+the media keys' one.
 
 ## Relative mouse
 
@@ -134,9 +153,13 @@ leaves it in the top-left corner, then moves it to the position in
   Pointer acceleration breaks this: small steps keep it down, but turn it
   off on the target where possible (on GNOME,
   `gsettings set org.gnome.desktop.peripherals.mouse accel-profile flat`).
-  UEFI does not accelerate the pointer.
+  On the RB3gen2, with GNOME's flat profile, moves landed within a pixel
+  of the position asked for; with its default adaptive profile, a move
+  to (300, 900) ended at the bottom edge, about (600, 1075).
 - The pointer passes through the top-left corner on every move, which
-  opens the GNOME overview if its hot corner is on.
+  opens or closes the GNOME overview if its hot corner is on. Turn it
+  off with
+  `gsettings set org.gnome.desktop.interface enable-hot-corners false`.
 
 While a button is held, a move goes from where the last one left the
 pointer instead, so that a drag does not drag to the corner. Clicks,
