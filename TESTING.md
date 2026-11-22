@@ -20,9 +20,12 @@ Setup.
 ## linkr
 
 Tried with a Linkr on Ethernet, with its own power supply, in front of a
-ThinkPad T14s Gen 7 in ThinkPad Setup (drawn on HDMI at 1280x800). Over
-USB-C the host saw a "Realtek Linkr USB LAN" adapter but received no
-packets and got no DHCP lease.
+ThinkPad T14s Gen 7 in ThinkPad Setup (drawn on HDMI at 1280x800), and
+in the GNOME live system of a qcom-deb-images installer image booted
+from the Linkr's own virtual disk (HDMI at 1920x1080, as a second
+monitor beside the laptop's panel), reading the Linkr's input devices
+with a small evdev reader. Over USB-C the host saw a "Realtek Linkr USB
+LAN" adapter but received no packets and got no DHCP lease.
 
 - [x] Reaching the Linkr over Ethernet and HTTPS, with its self-signed
       certificate (CN localhost) as `ca_file`
@@ -32,21 +35,36 @@ packets and got no DHCP lease.
 - [x] `snapshot`: JPEG, and the size koid reads from it (1280x800 in
       Setup). With no HDMI signal the Linkr answers "snapshot failed",
       which koid passes on
-- [ ] `keyboard.type`: text, Enter and tab; long text over several
-      requests arrives in order (a request returns at once, in about half
-      a second even with a delay of 2000 in it)
-- [ ] `keyboard.press`, `.down`, `.up` with browser key codes, including
-      ctrl+alt+delete
+- [x] `keyboard.type`: text, Enter and tab; a 450-character script with
+      quotes and newlines, typed into a terminal, ran as typed
+- [x] `keyboard.press`, `.down`, `.up` with browser key codes, including
+      ctrl+alt+delete (ctrl, alt and delete, in that order; GNOME opened
+      its log-out dialog). Keys sent back to back in one request are
+      lost: of 40 presses of down sent five to a request in Setup, 14
+      arrived; with 20 ms between events, as koid now sends them, all 40
+- [x] `keyboard.media`: AudioVolumeUp, AudioVolumeDown, AudioVolumeMute
+      and Power arrive as KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_MUTE and
+      KEY_POWER on the keyboard. MediaPlayPause, MediaTrackNext, Eject,
+      BrowserBack, LaunchApp2, WakeUp, F13 and Help send nothing, though
+      the Linkr answers success; Sleep was not tried
 - [ ] `mouse.move` and clicks land where they should with the absolute
       mouse. ThinkPad Setup ignores `mouse_abs`, as it does the
-      NanoKVM-USB's absolute mouse, so this needs an OS with a pointer;
-      and whether a click's press and release need a delay between them,
-      as relative events do
+      NanoKVM-USB's absolute mouse. In GNOME with the laptop's panel and
+      HDMI both on, the absolute mouse spans the whole desktop, not the
+      screen the Linkr captures: asked for the middle of HDMI, the
+      pointer landed 190 pixels from its left edge. Still to try with
+      HDMI the only screen
+- [x] Back and forward: button bits 0x08 and 0x10 arrive as BTN_SIDE and
+      BTN_EXTRA, from both mice; 0x20 sends nothing. Each mouse declares
+      eight buttons
 - [x] `mouse = "relative"` in ThinkPad Setup: moves are 1:1, clicks land
       on the pixel asked, a move of more than 127 is cut to 127, and
       events closer together than about 10 ms are lost (docs/linkr.md)
-- [ ] `mouse.scroll`: does a positive `wheelV` scroll down, as Radxa's
-      own client says? ThinkPad Setup ignored the wheel either way
+- [x] `mouse.scroll`: a positive `wheelV` scrolls down, as Radxa's own
+      client says, and each step is five notches (REL_WHEEL -5 for 1,
+      -15 for 3, horizontally too), whatever the Linkr's `wheel_rate` and
+      `wheel_mode` settings. ThinkPad Setup ignores the wheel
+- [x] `status` with the password: model Radxa Linkr, firmware 1.0.0
 - [x] USB storage over the private API (docs/linkr.md): login, list,
       space, upload over `/ws`, mount, unmount and delete, with a 4 MiB
       image and nothing on the Linkr's USB side
@@ -59,5 +77,15 @@ packets and got no DHCP lease.
       to reach the target (not seen through koid)
 - [x] What a wrong password gets from a real Linkr: HTTP 200 with code 1,
       "password incorrect"
-- [ ] Uploading a full-size ISO: speed, and resuming an interrupted
-      upload from `NextChunkIndex`
+- [x] Uploading a full-size image: 3.6 GB took 16 minutes, including
+      koid hashing it on a worker with an SD card, about 3.3 MB/s; the
+      Linkr keeps a partial upload as `NAME.incomplete`
+- [x] Resuming an interrupted upload from `NextChunkIndex`: with koid
+      stopped at 1.08 GB of 3.9 GB, inserting again carried on from
+      there
+- [x] Booting the target from a Linkr image: the qcom-deb-images
+      installer image (MBR and FAT32, 3.9 GB) showed up in the T14s's F12
+      menu as "USB HDD Linkr Virtual Media" and booted to GRUB and a live
+      system, where Linux saw it as a removable USB disk, "Virtual Media"
+- [ ] Why Debian's testing arm64 live GNOME ISO (a hybrid ISO, 3.6 GB),
+      mounted the same way, was not in the F12 menu, even after a restart

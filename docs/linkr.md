@@ -5,11 +5,13 @@ keyboard, mouse and screen go through its public API, and disk images
 through the API its own web interface uses.
 
 USB storage has been tried with a Linkr running firmware 1.6.0, reached
-over USB-C, with a Linux laptop as the target. Status, snapshots, keys
-and the relative mouse have been tried with a Linkr on Ethernet in front
-of a ThinkPad T14s Gen 7 in ThinkPad Setup; typing, the absolute mouse
-and the wheel have not, and follow Radxa's
-[developer documentation](https://docs.radxa.com/en/linkr/linkr/develop-guide).
+over USB-C, with a Linux laptop as the target. Everything has been tried
+with a Linkr on Ethernet in front of a ThinkPad T14s Gen 7, in ThinkPad
+Setup and in a Linux live system booted from the Linkr's virtual disk,
+except where the absolute mouse lands; see TESTING.md. Radxa's
+[developer documentation](https://docs.radxa.com/en/linkr/linkr/develop-guide)
+covers less than the Linkr does: the media keys, the back and forward
+buttons and the size of a wheel step below were found by trying them.
 
 | | |
 |---|---|
@@ -76,6 +78,18 @@ has none. `status` reports that size, and no video until koid has taken a
 snapshot. Each mouse event says which buttons are held and where the
 pointer is, so koid keeps both.
 
+A target with more than one screen takes the Linkr's absolute positions
+across all of them, not just the one the Linkr captures: in GNOME with a
+laptop's own panel on beside HDMI, a move to the middle of the HDMI
+screen landed near its left edge. Turn the other screens off (for Linux,
+`video=eDP-1:d` on the kernel command line turns off a laptop's panel),
+or use `mouse = "relative"`.
+
+There is no `kvm.reset`: neither API can reset the Linkr's USB device.
+The only reset the web interface makes, `POST /api/device/reset`, is a
+factory reset. Mounting or unmounting an image re-plugs the device, but
+that would also take away a disk the target may be running from.
+
 ## Relative mouse
 
 A Linkr is an absolute mouse by default, which puts the pointer exactly
@@ -134,7 +148,15 @@ pushes (`koictl storage insert --push-file`) is kept in a temporary file
 on the machine running koid while it is sent, so that needs room for it.
 
 Uploaded images stay on the Linkr, and koid does not delete old ones;
-remove them in the Linkr's web interface when it fills up.
+remove them in the Linkr's web interface when it fills up. An upload
+that stopped part way is kept as `NAME.incomplete`, and inserting the
+same image again carries on from where it stopped. Uploads are slow:
+a 3.6 GB image took 16 minutes, about 3.3 MB/s.
+
+A ThinkPad T14s Gen 7 booted from an installer image presented this way
+(MBR and FAT32), listed in its F12 menu as "USB HDD Linkr Virtual
+Media". It did not list Debian's arm64 live ISO, a hybrid ISO, presented
+the same way.
 
 Mounting and unmounting re-plug the Linkr's whole USB device, keyboard
 and mouse included, so the target sees them disconnect for a couple of
