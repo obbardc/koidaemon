@@ -180,3 +180,26 @@ def web_code(usage: int) -> str:
     if usage not in WEB_CODES:
         raise ValueError("key 0x%02x has no browser key name" % usage)
     return WEB_CODES[usage]
+
+
+# Media and system keys, which are not on the keyboard page and so are
+# pressed on their own with keyboard.media rather than with keyboard.press.
+# Matched case-insensitively.  Each backend maps the ones it can send.
+MEDIA_KEYS = (
+    "volumeup", "volumedown", "mute", "playpause", "nexttrack", "previoustrack",
+    "stopmedia", "eject",
+    "email", "websearch", "webfavourites", "webhome", "webback", "webforward",
+    "webstop", "webrefresh",
+    "mediaplayer", "explorer", "calculator", "screensaver", "mycomputer", "minimise",
+    "record", "rewind",
+    # System (ACPI) keys: the target's power button, and sleep and wake.
+    "power", "sleep", "wake",
+)
+
+
+def media_key(name: str) -> str:
+    """The canonical media key name for a name, matched case-insensitively."""
+    lowered = name.lower()
+    if lowered not in MEDIA_KEYS:
+        raise ValueError("unknown media key: %r" % name)
+    return lowered

@@ -23,6 +23,7 @@ import threading
 from koidaemon import __version__, config
 from koidaemon.client import Client
 from koidaemon.commands import MOUSE_BUTTONS, SNAPSHOT_FORMATS
+from koidaemon.keys import MEDIA_KEYS
 from koidaemon.daemon import Daemon
 from koidaemon.errors import ConfigError, KoiError, Unsupported
 from koidaemon.httpapi import HTTPApi
@@ -173,6 +174,9 @@ def _koictl_parser() -> argparse.ArgumentParser:
     for action in ("down", "up"):
         held = keyboard_actions.add_parser(action, help="hold or release a key")
         held.add_argument("key")
+    media = keyboard_actions.add_parser("media", help="press media or system keys in turn")
+    media.add_argument("keys", nargs="+", choices=MEDIA_KEYS, metavar="KEY",
+                       help="one of: %s" % ", ".join(MEDIA_KEYS))
 
     mouse = commands.add_parser("mouse", help="move, click and scroll (screen pixels)")
     mouse_actions = mouse.add_subparsers(dest="action", required=True)
@@ -216,6 +220,8 @@ def _request(args: argparse.Namespace) -> tuple[str, dict]:
         return name, {"keys": args.keys}
     if name in ("keyboard.down", "keyboard.up"):
         return name, {"key": args.key}
+    if name == "keyboard.media":
+        return name, {"keys": args.keys}
 
     if name == "mouse.move":
         return name, {"x": args.x, "y": args.y}

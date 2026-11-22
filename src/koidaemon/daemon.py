@@ -147,6 +147,8 @@ class Daemon:
             backend.key_down(args["usage"])
         elif name == "keyboard.up":
             backend.key_up(args["usage"])
+        elif name == "keyboard.media":
+            backend.media_press(args["keys"])
         elif name == "mouse.move":
             backend.mouse_move(args["x"], args["y"])
         elif name == "mouse.click":

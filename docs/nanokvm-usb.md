@@ -20,6 +20,7 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
 | | |
 |---|---|
 | Keyboard | yes, at most 6 keys besides the modifiers held at once |
+| Media keys | yes, all of `keyboard.media`'s |
 | Mouse | yes, absolute pixels |
 | Snapshot | yes, captured with GStreamer as JPEG, which koid turns into PNG unless asked not to |
 | USB storage | no; the NanoKVM-USB has none |
@@ -73,6 +74,7 @@ answer.
 |---|---|
 | `status` | `0x01` GET_INFO: chip version, whether the target has found the USB keyboard and mouse, and its lock lights |
 | `keyboard.*` | `0x02`: an 8-byte keyboard report, sent for every key going down or up |
+| `keyboard.media` | `0x03`: report 2, three bytes of media and browser key bits, or report 1, one byte of system key bits (power, sleep, wake); each key is sent pressed and then released |
 | `mouse.*` | `0x04`: buttons, a position scaled to 0..4095, and a wheel step of at most 127 |
 | `snapshot` | `gst-launch-1.0 v4l2src ! image/jpeg ! multifilesink` |
 

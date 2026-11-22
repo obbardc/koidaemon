@@ -231,6 +231,21 @@ def test_at_most_six_keys(chip, backend):
     backend.key_down(keys.LEFT_SHIFT)
 
 
+def test_every_media_key_is_mapped():
+    assert set(nanokvm_usb.MEDIA_BITS) == set(keys.MEDIA_KEYS)
+
+
+def test_media_keys(chip, backend):
+    backend.media_press(["volumeup", "calculator", "power"])
+    reports = [data for command, data in chip.frames
+               if command == nanokvm_usb.CMD_KEYBOARD_MEDIA]
+    assert reports == [
+        bytes([0x02, 0x01, 0x00, 0x00]), bytes([0x02, 0x00, 0x00, 0x00]),
+        bytes([0x02, 0x00, 0x00, 0x04]), bytes([0x02, 0x00, 0x00, 0x00]),
+        bytes([0x01, 0x01]), bytes([0x01, 0x00]),
+    ]
+
+
 # ----------------------------------------------------------------------
 # Mouse
 # ----------------------------------------------------------------------

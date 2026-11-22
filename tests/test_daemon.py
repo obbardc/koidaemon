@@ -56,6 +56,7 @@ def served(daemon):
      ("press", [[0x3B], [keys.LEFT_CTRL, 0x06]])),
     ("keyboard.down", {"key": "shift"}, ("key_down", keys.LEFT_SHIFT)),
     ("keyboard.up", {"key": "shift"}, ("key_up", keys.LEFT_SHIFT)),
+    ("keyboard.media", {"keys": ["Mute", "wake"]}, ("media_press", ["mute", "wake"])),
     ("mouse.move", {"x": 10, "y": 20}, ("mouse_move", 10, 20)),
     ("mouse.click", {"count": 2}, ("mouse_click", "left", 2, None, None)),
     ("mouse.click", {"button": "right", "x": 1, "y": 2}, ("mouse_click", "right", 1, 1, 2)),

@@ -83,6 +83,9 @@ class RecordingBackend(Backend):
     def key_up(self, usage):
         self._record("key_up", usage)
 
+    def media_press(self, names):
+        self._record("media_press", names)
+
     def mouse_move(self, x, y):
         self._record("mouse_move", x, y)
 

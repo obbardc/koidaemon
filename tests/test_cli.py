@@ -60,6 +60,7 @@ def koictl(socket_path, *argv, target="board"):
      ("press", [[0x3B], [keys.LEFT_CTRL, keys.LEFT_ALT, 0x4C]])),
     (["keyboard", "down", "shift"], ("key_down", keys.LEFT_SHIFT)),
     (["keyboard", "up", "shift"], ("key_up", keys.LEFT_SHIFT)),
+    (["keyboard", "media", "volumeup", "power"], ("media_press", ["volumeup", "power"])),
     (["mouse", "move", "640", "400"], ("mouse_move", 640, 400)),
     (["mouse", "click"], ("mouse_click", "left", 1, None, None)),
     (["mouse", "click", "--button", "right", "--count", "2", "--at", "5", "6"],

@@ -68,6 +68,21 @@ def test_press_with_an_unknown_key():
         commands.validate("keyboard.press", {"keys": ["ctrl+banana"]})
 
 
+def test_media_names_are_matched_case_insensitively():
+    args = commands.validate("keyboard.media", {"keys": ["VolumeUp", "power"]})
+    assert args == {"keys": ["volumeup", "power"]}
+
+
+@pytest.mark.parametrize("value, message", [
+    ([], "list of media key names"),
+    (["mute", 3], "list of media key names"),
+    (["f2"], "unknown media key"),
+])
+def test_media_needs_known_names(value, message):
+    with pytest.raises(InvalidRequest, match=message):
+        commands.validate("keyboard.media", {"keys": value})
+
+
 def test_key_down_and_up_parse_the_key():
     assert commands.validate("keyboard.down", {"key": "shift"}) == {"usage": keys.LEFT_SHIFT}
     assert commands.validate("keyboard.up", {"key": "KeyA"}) == {"usage": 0x04}

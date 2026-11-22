@@ -51,6 +51,7 @@ ADDRESS = 0x00
 
 CMD_GET_INFO = 0x01
 CMD_KEYBOARD = 0x02
+CMD_KEYBOARD_MEDIA = 0x03
 CMD_MOUSE_ABSOLUTE = 0x04
 
 # The chip answers each command with the same command plus this.
@@ -68,6 +69,29 @@ STATUS_ERRORS = {
 
 # A keyboard report has room for this many keys besides the modifiers.
 MAX_KEYS = 6
+
+# Media keys are bits in one of the chip's two extra reports: report 2
+# holds three bytes of media and browser keys, report 1 one byte of
+# system (ACPI) keys.  Each name maps to (report, byte, bit).
+MEDIA_REPORT = 0x02
+ACPI_REPORT = 0x01
+MEDIA_BITS = {
+    "volumeup": (MEDIA_REPORT, 0, 0), "volumedown": (MEDIA_REPORT, 0, 1),
+    "mute": (MEDIA_REPORT, 0, 2), "playpause": (MEDIA_REPORT, 0, 3),
+    "nexttrack": (MEDIA_REPORT, 0, 4), "previoustrack": (MEDIA_REPORT, 0, 5),
+    "stopmedia": (MEDIA_REPORT, 0, 6), "eject": (MEDIA_REPORT, 0, 7),
+    "email": (MEDIA_REPORT, 1, 0), "websearch": (MEDIA_REPORT, 1, 1),
+    "webfavourites": (MEDIA_REPORT, 1, 2), "webhome": (MEDIA_REPORT, 1, 3),
+    "webback": (MEDIA_REPORT, 1, 4), "webforward": (MEDIA_REPORT, 1, 5),
+    "webstop": (MEDIA_REPORT, 1, 6), "webrefresh": (MEDIA_REPORT, 1, 7),
+    "mediaplayer": (MEDIA_REPORT, 2, 0), "explorer": (MEDIA_REPORT, 2, 1),
+    "calculator": (MEDIA_REPORT, 2, 2), "screensaver": (MEDIA_REPORT, 2, 3),
+    "mycomputer": (MEDIA_REPORT, 2, 4), "minimise": (MEDIA_REPORT, 2, 5),
+    "record": (MEDIA_REPORT, 2, 6), "rewind": (MEDIA_REPORT, 2, 7),
+    "power": (ACPI_REPORT, 0, 0), "sleep": (ACPI_REPORT, 0, 1),
+    "wake": (ACPI_REPORT, 0, 2),
+}
+REPORT_SIZES = {MEDIA_REPORT: 3, ACPI_REPORT: 1}
 
 # Absolute mouse positions go from 0 to this, whatever the screen size;
 # wheel steps are signed bytes.
@@ -130,7 +154,8 @@ def to_mouse_range(position: int, size: int) -> int:
 
 class NanoKVMUSBBackend(Backend):
     name = "nanokvm-usb"
-    capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.MOUSE))
+    capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.KEYBOARD_MEDIA,
+                              commands.MOUSE))
     mouse_buttons = tuple(MOUSE_BUTTONS)
 
     def __init__(self, target: str, settings: Settings) -> None:
@@ -395,6 +420,16 @@ class NanoKVMUSBBackend(Backend):
     def key_up(self, usage: int) -> None:
         self._release(usage)
         self._send_held_keys()
+
+    def media_press(self, names: list[str]) -> None:
+        for name in names:
+            report, index, bit = MEDIA_BITS[name]
+            pressed = bytearray(REPORT_SIZES[report])
+            pressed[index] = 1 << bit
+            self._checked(CMD_KEYBOARD_MEDIA, bytes([report]) + bytes(pressed))
+            time.sleep(self.key_interval)
+            self._checked(CMD_KEYBOARD_MEDIA, bytes([report]) + bytes(REPORT_SIZES[report]))
+            time.sleep(self.key_interval)
 
     # ------------------------------------------------------------------
     # Mouse

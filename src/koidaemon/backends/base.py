@@ -151,6 +151,9 @@ class Backend:
     def key_up(self, usage: int) -> None:
         raise Unsupported("%s has no keyboard" % self.name)
 
+    def media_press(self, names: list[str]) -> None:
+        raise Unsupported("%s cannot press media keys" % self.name)
+
     def mouse_move(self, x: int, y: int) -> None:
         raise Unsupported("%s has no mouse" % self.name)
 

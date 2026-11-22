@@ -25,3 +25,6 @@ session on the RB3gen2, a modifier pressed on its own also works:
       running at a different resolution from the capture size
 - [ ] Whether the 50 ms `key_interval` is needed once Linux is running,
       or only in UEFI
+- [ ] `keyboard.media`: the bit for each key is from the CH9329
+      protocol and has not been tried, e.g. that `volumeup` shows the
+      GNOME volume OSD and `calculator` opens a calculator

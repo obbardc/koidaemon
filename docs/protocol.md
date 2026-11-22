@@ -147,6 +147,26 @@ Needs `keyboard`.
 |---|---|---|
 | `key` | string | one key |
 
+### keyboard.media
+
+Needs `keyboard.media`.
+
+| Argument | Type | |
+|---|---|---|
+| `keys` | list of strings | media or system keys, pressed and released one after the other |
+
+These keys are not on a keyboard's key page, so they cannot be combined
+with other keys or held down. The names, matched case-insensitively:
+
+- media: `volumeup`, `volumedown`, `mute`, `playpause`, `nexttrack`,
+  `previoustrack`, `stopmedia`, `eject`, `mediaplayer`, `record`,
+  `rewind`
+- browser and applications: `email`, `websearch`, `webfavourites`,
+  `webhome`, `webback`, `webforward`, `webstop`, `webrefresh`,
+  `explorer`, `calculator`, `screensaver`, `mycomputer`, `minimise`
+- system: `power` (the target's power button, as its operating system
+  sees it), `sleep` and `wake`
+
 ### mouse.move
 
 Needs `mouse`.

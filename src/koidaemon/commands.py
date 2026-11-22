@@ -26,10 +26,11 @@ from koidaemon.errors import InvalidRequest
 # Capabilities a backend can have.
 SNAPSHOT = "snapshot"
 KEYBOARD = "keyboard"
+KEYBOARD_MEDIA = "keyboard.media"
 MOUSE = "mouse"
 STORAGE_STICK = "storage.stick"
 STORAGE_CDROM = "storage.cdrom"
-ALL_CAPABILITIES = (SNAPSHOT, KEYBOARD, MOUSE, STORAGE_STICK, STORAGE_CDROM)
+ALL_CAPABILITIES = (SNAPSHOT, KEYBOARD, KEYBOARD_MEDIA, MOUSE, STORAGE_STICK, STORAGE_CDROM)
 
 # Not a capability of its own: commands that work with either kind of drive.
 ANY_STORAGE = "storage"
@@ -86,6 +87,10 @@ COMMANDS = {command.name: command for command in (
     )),
     Command("keyboard.up", "release a key held with keyboard.down", KEYBOARD, (
         Argument("key", str, "key name", required=True),
+    )),
+    Command("keyboard.media", "press and release media and system keys, in order",
+            KEYBOARD_MEDIA, (
+        Argument("keys", list, 'names such as "volumeup" or "power"', required=True),
     )),
 
     Command("mouse.move", "move the pointer", MOUSE, (
@@ -176,6 +181,10 @@ def _check_meaning(name: str, args: dict) -> None:
             args["combinations"] = [keys.parse_combination(key) for key in args.pop("keys")]
         elif name in ("keyboard.down", "keyboard.up"):
             args["usage"] = keys.usage_for_name(args.pop("key"))
+        elif name == "keyboard.media":
+            if not args["keys"] or not all(isinstance(key, str) for key in args["keys"]):
+                raise InvalidRequest("keys must be a list of media key names")
+            args["keys"] = [keys.media_key(key) for key in args["keys"]]
     except ValueError as error:
         raise InvalidRequest(str(error)) from error
 

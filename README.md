@@ -141,6 +141,7 @@ the details.
 | `keyboard.type` | type text |
 | `keyboard.press` | press and release keys or combinations, in order |
 | `keyboard.down`, `keyboard.up` | hold and release a key |
+| `keyboard.media` | press media and system keys, such as volume or power |
 | `mouse.move` | move the pointer |
 | `mouse.click` | click a button, optionally after moving |
 | `mouse.down`, `mouse.up` | hold and release a button |
