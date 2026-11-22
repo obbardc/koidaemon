@@ -39,6 +39,7 @@ FAKE_PNG = make_picture(64, 48)
 
 class RecordingBackend(Backend):
     name = "fake"
+    mouse_buttons = commands.MOUSE_BUTTONS
 
     def __init__(self, target: str = "board", capabilities=commands.ALL_CAPABILITIES,
                  resource: str | None = None) -> None:

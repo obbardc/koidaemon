@@ -90,10 +90,10 @@ No target and no arguments. Returns the targets koid knows:
 ### status
 
 Whether the target is reachable and powered, its video if the KVM knows
-it, and its capabilities:
+it, its capabilities and, with `mouse`, the mouse buttons it has:
 
 ```json
-{"online": true, "video": {"width": 1920, "height": 1080}, "capabilities": ["keyboard", "mouse", "snapshot", "storage.cdrom", "storage.stick"]}
+{"online": true, "video": {"width": 1920, "height": 1080}, "capabilities": ["keyboard", "mouse", "snapshot", "storage.cdrom", "storage.stick"], "mouse_buttons": ["left", "right", "middle"]}
 ```
 
 `video` is null when there is no signal or the KVM cannot tell without
@@ -161,7 +161,7 @@ Needs `mouse`.
 
 | Argument | Type | |
 |---|---|---|
-| `button` | `left`, `right` or `middle` | optional; default `left` |
+| `button` | `left`, `right`, `middle`, `back` or `forward` | optional; default `left`; only those in the status's `mouse_buttons` |
 | `count` | 1 to 10 | optional; default 1, 2 for a double click |
 | `x`, `y` | whole numbers | optional, together: move here first |
 
@@ -171,7 +171,7 @@ Needs `mouse`.
 
 | Argument | Type | |
 |---|---|---|
-| `button` | `left`, `right` or `middle` | optional; default `left` |
+| `button` | `left`, `right`, `middle`, `back` or `forward` | optional; default `left`; only those in the status's `mouse_buttons` |
 
 ### mouse.scroll
 

@@ -61,6 +61,7 @@ def served(daemon):
     ("mouse.click", {"button": "right", "x": 1, "y": 2}, ("mouse_click", "right", 1, 1, 2)),
     ("mouse.down", {}, ("mouse_down", "left")),
     ("mouse.up", {"button": "middle"}, ("mouse_up", "middle")),
+    ("mouse.click", {"button": "back"}, ("mouse_click", "back", 1, None, None)),
     ("mouse.scroll", {"notches": -3}, ("mouse_scroll", -3)),
     ("storage.eject", {}, ("storage_eject",)),
 ])
@@ -69,11 +70,21 @@ def test_commands_reach_the_backend(daemon, backend, command, args, call):
     assert backend.calls == [call]
 
 
+def test_a_button_the_mouse_lacks_is_unsupported(daemon, backend):
+    backend.mouse_buttons = ("left", "right", "middle")
+    reply = daemon.handle(request("mouse.click", button="forward"))
+    assert not reply["ok"]
+    assert reply["error"]["code"] == "unsupported"
+    assert "forward" in reply["error"]["message"]
+    assert backend.calls == []
+
+
 def test_status_adds_capabilities(daemon):
     reply = daemon.handle(request("status"))
     assert reply["ok"]
     assert reply["result"]["online"] is True
     assert reply["result"]["capabilities"] == sorted(commands.ALL_CAPABILITIES)
+    assert reply["result"]["mouse_buttons"] == list(commands.MOUSE_BUTTONS)
 
 
 def test_snapshot_is_base64(daemon):

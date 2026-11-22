@@ -267,6 +267,13 @@ def test_down_and_up_buttons(chip, backend):
     ]
 
 
+@pytest.mark.parametrize("button, bit", [("back", 0x08), ("forward", 0x10)])
+def test_back_and_forward_buttons(chip, backend, button, bit):
+    assert button in backend.mouse_buttons
+    backend.mouse_click(button, 1, None, None)
+    assert chip.mouse_reports() == [mouse(bit, 0, 0), mouse(0, 0, 0)]
+
+
 def test_scroll(chip, backend):
     backend.mouse_scroll(3)
     backend.mouse_scroll(-200)

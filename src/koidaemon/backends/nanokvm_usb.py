@@ -73,7 +73,7 @@ MAX_KEYS = 6
 # wheel steps are signed bytes.
 MOUSE_MAX = 4095
 MAX_WHEEL_STEP = 127
-MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04}
+MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04, "back": 0x08, "forward": 0x10}
 
 # Pause between the clicks of a double click.
 CLICK_INTERVAL = 0.05
@@ -131,6 +131,7 @@ def to_mouse_range(position: int, size: int) -> int:
 class NanoKVMUSBBackend(Backend):
     name = "nanokvm-usb"
     capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.MOUSE))
+    mouse_buttons = tuple(MOUSE_BUTTONS)
 
     def __init__(self, target: str, settings: Settings) -> None:
         super().__init__(target, settings)

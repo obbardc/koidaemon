@@ -108,6 +108,9 @@ class Daemon:
         needed = commands.required_capability(name, args)
         if not commands.has_capability(backend.capabilities, needed):
             raise Unsupported("%s (%s) cannot do %s" % (target, backend.name, name))
+        if args.get("button") is not None and args["button"] not in backend.mouse_buttons:
+            raise Unsupported("%s (%s) has no %s mouse button"
+                              % (target, backend.name, args["button"]))
 
         LOG.info("%s: %s", target, name)
         with self._locks[backend.resource]:
@@ -124,6 +127,8 @@ class Daemon:
         if name == "status":
             status = backend.status()
             status["capabilities"] = sorted(backend.capabilities)
+            if commands.MOUSE in backend.capabilities:
+                status["mouse_buttons"] = list(backend.mouse_buttons)
             return status
         if name == "snapshot":
             snapshot = images.convert(backend.snapshot(), args["format"])

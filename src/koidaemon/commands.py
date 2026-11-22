@@ -35,7 +35,9 @@ ALL_CAPABILITIES = (SNAPSHOT, KEYBOARD, MOUSE, STORAGE_STICK, STORAGE_CDROM)
 ANY_STORAGE = "storage"
 
 SNAPSHOT_FORMATS = ("png", "jpeg", "native")
-MOUSE_BUTTONS = ("left", "right", "middle")
+# Every mouse has the first three; a backend lists the ones it has in
+# Backend.mouse_buttons.
+MOUSE_BUTTONS = ("left", "right", "middle", "back", "forward")
 STORAGE_MODES = ("stick", "cdrom")
 MAX_CLICKS = 10
 MAX_SCROLL = 100

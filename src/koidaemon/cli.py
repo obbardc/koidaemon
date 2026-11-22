@@ -22,7 +22,7 @@ import threading
 
 from koidaemon import __version__, config
 from koidaemon.client import Client
-from koidaemon.commands import SNAPSHOT_FORMATS
+from koidaemon.commands import MOUSE_BUTTONS, SNAPSHOT_FORMATS
 from koidaemon.daemon import Daemon
 from koidaemon.errors import ConfigError, KoiError, Unsupported
 from koidaemon.httpapi import HTTPApi
@@ -180,12 +180,12 @@ def _koictl_parser() -> argparse.ArgumentParser:
     move.add_argument("x", type=int)
     move.add_argument("y", type=int)
     click = mouse_actions.add_parser("click", help="click a button")
-    click.add_argument("--button", choices=("left", "right", "middle"), default="left")
+    click.add_argument("--button", choices=MOUSE_BUTTONS, default="left")
     click.add_argument("--count", type=int, default=1, help="2 for a double click")
     click.add_argument("--at", nargs=2, type=int, metavar=("X", "Y"), help="move here first")
     for action in ("down", "up"):
         button = mouse_actions.add_parser(action, help="hold or release a button")
-        button.add_argument("--button", choices=("left", "right", "middle"), default="left")
+        button.add_argument("--button", choices=MOUSE_BUTTONS, default="left")
     scroll = mouse_actions.add_parser("scroll", help="turn the wheel")
     scroll.add_argument("notches", type=int, help="positive scrolls up, negative down")
 

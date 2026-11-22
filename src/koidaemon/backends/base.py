@@ -111,6 +111,8 @@ class Backend:
 
     name = ""
     capabilities: frozenset = frozenset()
+    # The mouse buttons it can press, of commands.MOUSE_BUTTONS.
+    mouse_buttons: tuple = ("left", "right", "middle")
 
     def __init__(self, target: str, settings: Settings) -> None:
         self.target = target
