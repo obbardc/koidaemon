@@ -11,7 +11,8 @@ Tested so far: status, snapshots, and the keyboard (keys, typing,
 combinations) on a NanoKVM-USB in front of a Radxa Dragon Q8B, in its
 UEFI menus and shell; and everything listed in
 [docs/nanokvm-usb.md](docs/nanokvm-usb.md) in front of a Qualcomm
-RB3gen2 running GNOME.
+RB3gen2 running GNOME and a Lenovo ThinkPad T14s Gen 7 in ThinkPad
+Setup.
 
-- [ ] `mouse = "relative"` in a UEFI with a pointer; no UEFI tried so
-      far has one
+- [ ] Why ThinkPad Setup on the T14s ignores the absolute mouse, and
+      whether other firmware with a pointer does the same

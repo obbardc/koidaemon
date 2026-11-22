@@ -34,7 +34,8 @@ how to test):
 - **nanokvm-usb:** snapshots and the keyboard, on a NanoKVM-USB in
   front of a Radxa Dragon Q8B in its UEFI menus and shell; every
   command it has, in front of a Qualcomm RB3gen2 running GNOME at several
-  resolutions. Not yet the relative mouse in a UEFI. See
+  resolutions; and the keyboard and relative mouse in ThinkPad Setup on
+  a ThinkPad T14s Gen 7, which ignores the absolute mouse. See
   [docs/nanokvm-usb.md](docs/nanokvm-usb.md).
 - **pikvm:** every command, on a PiKVM V4 Mini with kvmd 4.61 and a
   board with a 1920x1080 Linux console. See [docs/pikvm.md](docs/pikvm.md)

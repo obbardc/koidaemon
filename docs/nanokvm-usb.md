@@ -17,7 +17,10 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
   clicks, double clicks and drags, which land on the pixel aimed at in
   the snapshot; all five buttons and the wheel; shift held across a
   click; typing mixed-case text with shifted symbols; media and system
-  keys; the relative mouse; and `kvm.reset`.
+  keys; the relative mouse; and `kvm.reset`;
+- in front of a Lenovo ThinkPad T14s Gen 7 (Snapdragon X2 Elite, BIOS
+  N4PET33W 1.14), in ThinkPad Setup: snapshots, the keyboard, and
+  the relative mouse with clicks. Setup ignores the absolute mouse.
 
 | | |
 |---|---|
@@ -104,6 +107,9 @@ typed with `key_interval = 0` came through whole, at about 13 ms a
 character instead of 110 ms. Set it to 0 for a target that will only
 be driven once Linux is running.
 
+Not every firmware needs it either: ThinkPad Setup on the T14s took
+runs of arrow keys whole with `key_interval = 0`.
+
 ## The chip's settings
 
 `status` has a `chip` object with how the CH9329 is set up, as Sipeed
@@ -169,6 +175,14 @@ leaves it in the top-left corner, then moves it to the position in
   off with
   `gsettings set org.gnome.desktop.interface enable-hot-corners false`.
 
+ThinkPad Setup on the T14s shows a pointer but does not move it for
+the absolute mouse at all, so it needs `mouse = "relative"`. It also
+scales relative moves as if its 1920x1080 screen were 1280x1024: a move
+to (650, 780) ended at about (974, 823), 1.5 times as far across and
+1.055 times as far down. Dividing the position by those factors
+(1920/1280 and 1080/1024) before moving put the pointer within about 25
+pixels of the one aimed at, close enough to click a menu entry.
+
 While a button is held, a move goes from where the last one left the
 pointer instead, so that a drag does not drag to the corner. Clicks,
 holds and the wheel without a position do not move the pointer.
@@ -207,6 +221,10 @@ The relative mouse moves the target's own pixels, so with a target at
 undistorted. The MS2130 captures 1920x1080, 1280x1024, 1024x768, 1280x720
 and 800x600, and with a 1024x768 capture, relative moves landed within
 a couple of pixels.
+
+A laptop may only draw its firmware's screens on its own panel. On the
+T14s, set Config > Display > Boot Display Device to the external
+display in ThinkPad Setup to see them over the NanoKVM-USB.
 
 The NanoKVM-USB tells the target it is a Philips 230C monitor, which
 offers 1920x1080, 1280x1024, 1024x768 and 800x600, all at 60 Hz.
