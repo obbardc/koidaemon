@@ -2,6 +2,8 @@
 
 What has been tried on real devices is in the README and each backend's
 page under [docs](docs/). This is what has not been tried yet.
+[docs/hardware-testing.md](docs/hardware-testing.md) is the list to
+work through for a new backend or KVM.
 
 ## nanokvm-usb
 

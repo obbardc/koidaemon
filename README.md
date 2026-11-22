@@ -23,7 +23,8 @@ or a serial line, are meant to be supported too.
 | [`raritan-legacy`](docs/raritan-legacy.md) | first-generation Raritan Dominion KX | yes | yes | PNG | no | no |
 
 What has been tested on real hardware so far ([TESTING.md](TESTING.md)
-lists what has not):
+lists what has not, and [docs/hardware-testing.md](docs/hardware-testing.md)
+how to test):
 
 - **raritan-legacy:** keyboard and mouse, on a Dominion KX with firmware
   1.4.9.5.16 and a DCIM-USBG2; snapshots of a Linux text console and of
@@ -31,10 +32,10 @@ lists what has not):
   widescreen modes; see [docs/raritan-legacy.md](docs/raritan-legacy.md)
   for the resolutions that work.
 - **nanokvm-usb:** snapshots and the keyboard, on a NanoKVM-USB in
-  front of a Radxa Dragon Q8B in its UEFI menus and shell; snapshots,
-  the keyboard and left clicks in front of a Qualcomm RB3gen2 at the
-  GNOME login screen. Not yet drags, scrolling or the other mouse
-  buttons. See [docs/nanokvm-usb.md](docs/nanokvm-usb.md).
+  front of a Radxa Dragon Q8B in its UEFI menus and shell; every
+  command it has, in front of a Qualcomm RB3gen2 running GNOME at several
+  resolutions. Not yet the relative mouse in a UEFI. See
+  [docs/nanokvm-usb.md](docs/nanokvm-usb.md).
 - **pikvm:** every command, on a PiKVM V4 Mini with kvmd 4.61 and a
   board with a 1920x1080 Linux console. See [docs/pikvm.md](docs/pikvm.md)
   for how a target sees the USB drive.
