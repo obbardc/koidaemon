@@ -7,10 +7,15 @@ mouse are driven through a serial port. koid talks to both directly, so
 Sipeed's browser or desktop client is not needed (and must not hold the
 serial port while koid uses it).
 
-Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8) in
-front of a Radxa Dragon Q8B: snapshots, and the keyboard in the board's
-UEFI setup menus and UEFI Shell. The mouse has not been tried on a
-target yet, since UEFI there has no pointer.
+Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
+
+- in front of a Radxa Dragon Q8B: snapshots, and the keyboard in the
+  board's UEFI setup menus and UEFI Shell, which has no pointer;
+- in front of a Qualcomm RB3gen2 running Debian with GNOME, at the GDM
+  login screen: snapshots at 1920x1080, single left clicks, which land on
+  the pixel aimed at in the snapshot, and typing mixed-case text with
+  shifted symbols. Drags, scrolling and the other buttons have not been
+  tried yet.
 
 | | |
 |---|---|

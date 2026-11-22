@@ -31,8 +31,10 @@ lists what has not):
   widescreen modes; see [docs/raritan-legacy.md](docs/raritan-legacy.md)
   for the resolutions that work.
 - **nanokvm-usb:** snapshots and the keyboard, on a NanoKVM-USB in
-  front of a Radxa Dragon Q8B in its UEFI menus and shell; not yet the
-  mouse. See [docs/nanokvm-usb.md](docs/nanokvm-usb.md).
+  front of a Radxa Dragon Q8B in its UEFI menus and shell; snapshots,
+  the keyboard and left clicks in front of a Qualcomm RB3gen2 at the
+  GNOME login screen. Not yet drags, scrolling or the other mouse
+  buttons. See [docs/nanokvm-usb.md](docs/nanokvm-usb.md).
 - **pikvm:** every command, on a PiKVM V4 Mini with kvmd 4.61 and a
   board with a 1920x1080 Linux console. See [docs/pikvm.md](docs/pikvm.md)
   for how a target sees the USB drive.
