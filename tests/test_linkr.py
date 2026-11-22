@@ -85,7 +85,7 @@ def test_command_fails(device, backend):
 
 def test_status(device, backend):
     assert backend.status() == {"online": True, "video": None}
-    assert device.controls == [[]]
+    assert device.controls == [[["delay", 0]]]
     assert device.snapshots == 0
     backend.snapshot()
     assert backend.status()["video"] == {"width": 1920, "height": 1080}

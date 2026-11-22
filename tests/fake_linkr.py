@@ -133,6 +133,10 @@ class FakeLinkr:
         elif method == "POST" and handler.path == "/api/public/control":
             events = json.loads(body)["events"]
             self.controls.append(events)
+            if not events:
+                # What a real Linkr (firmware 1.6.0) answers.
+                self._json(handler, 200, {"code": 1, "message": "control failed"})
+                return
             self._json(handler, 200, self.control_answer
                        or {"code": 0, "data": None, "message": "success"})
         else:

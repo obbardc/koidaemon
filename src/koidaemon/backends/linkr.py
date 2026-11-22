@@ -165,9 +165,10 @@ class LinkrBackend(Backend):
     # ------------------------------------------------------------------
 
     def status(self) -> dict:
-        # An empty list of events checks the Linkr answers and takes the
-        # token, without the cost of a snapshot.
-        self._control([])
+        # A delay of nothing checks the Linkr answers and takes the token,
+        # without the cost of a snapshot. An empty list of events would be
+        # cheaper still, but a Linkr answers it "control failed".
+        self._control([["delay", 0]])
         video = None
         if self._screen is not None:
             video = {"width": self._screen[0], "height": self._screen[1]}

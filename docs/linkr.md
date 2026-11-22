@@ -48,7 +48,7 @@ Every request carries `Authorization: token TOKEN`.
 
 | Command | Linkr API |
 |---|---|
-| `status` | `POST /api/public/control` with no events, to check the Linkr answers and takes the token |
+| `status` | `POST /api/public/control` with a delay of 0, to check the Linkr answers and takes the token (it refuses an empty list of events) |
 | `snapshot` | `GET /api/public/snapshot` |
 | `keyboard.type` | `["text", ...]` events of at most 30 characters, with `["delay", 1000]` between them |
 | `keyboard.press`, `.down`, `.up` | `["keyboard", code, pressed]`, with browser key codes |
