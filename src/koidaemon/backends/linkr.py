@@ -178,7 +178,14 @@ class LinkrBackend(Backend):
         data = self._call("GET", "snapshot")
         size = jpeg_size(data)
         if size is None:
-            raise BackendError("%s sent a snapshot that is not a JPEG" % self.url)
+            # With no picture, for one when the target sends no video, a
+            # Linkr answers {"code": 1, "message": "snapshot failed"}.
+            message = None
+            try:
+                message = json.loads(data).get("message")
+            except (ValueError, AttributeError):
+                pass
+            raise BackendError("%s: %s" % (self.url, message or "sent a snapshot that is not a JPEG"))
         self._screen = size
         return Snapshot("jpeg", data, size[0], size[1])
 

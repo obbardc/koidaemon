@@ -106,6 +106,12 @@ def test_snapshot_that_is_not_a_jpeg(device, backend):
         backend.snapshot()
 
 
+def test_snapshot_with_no_video(device, backend):
+    device.snapshot_data = b'{"code":1,"message":"snapshot failed"}'
+    with pytest.raises(BackendError, match="snapshot failed"):
+        backend.snapshot()
+
+
 # ----------------------------------------------------------------------
 # Keyboard
 # ----------------------------------------------------------------------
