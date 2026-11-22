@@ -216,7 +216,15 @@ class LinkrBackend(Backend):
         video = None
         if self._screen is not None:
             video = {"width": self._screen[0], "height": self._screen[1]}
-        return {"online": True, "video": video}
+        status = {"online": True, "video": video}
+        if self.storage is not None:
+            # Only reported: the Linkr's details are not worth failing
+            # status over.
+            try:
+                status["device"] = self.storage.device()
+            except BackendError as error:
+                status["device"] = {"error": str(error)}
+        return status
 
     def snapshot(self) -> Snapshot:
         data = self._call("GET", "snapshot")

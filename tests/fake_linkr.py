@@ -117,6 +117,14 @@ class FakeLinkr:
                 self._json(handler, 403, {"code": 403, "message": "No Permisson"})
                 return
             self._storage(handler, method, handler.path, json.loads(body) if body else None)
+        elif method == "GET" and handler.path in ("/api/device/info", "/api/device/version"):
+            if handler.headers.get("Authorization", "")[7:] not in self.jwts:
+                self._json(handler, 403, {"code": 403, "message": "No Permisson"})
+            elif handler.path == "/api/device/info":
+                self._ok(handler, {"model": "Radxa Linkr", "sn": "5980169cce5397d5",
+                                   "eth0_mac": "06:41:99:83:8c:6a", "domain_name": ""})
+            else:
+                self._ok(handler, {"version": "1.0.0"})
         else:
             self._json(handler, 404, {"code": 404, "data": None, "message": "Not Found"})
 

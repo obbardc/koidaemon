@@ -240,6 +240,17 @@ class LinkrStorage:
     def delete(self, name: str) -> None:
         self._call("DELETE", "/api/storage/file", {"filename": name})
 
+    def device(self) -> dict:
+        """The Linkr's model, serial number and firmware version, which
+        take the same login as its images."""
+        info = self._call("GET", "/api/device/info")
+        version = self._call("GET", "/api/device/version")
+        return {
+            "model": info.get("model"),
+            "serial": info.get("sn"),
+            "firmware": version.get("version"),
+        }
+
     # -- Upload ----------------------------------------------------------
 
     def upload(self, image: DiskImage, name: str) -> None:

@@ -53,6 +53,7 @@ Every request carries `Authorization: token TOKEN`.
 | Command | Linkr API |
 |---|---|
 | `status` | `POST /api/public/control` with a delay of 0, to check the Linkr answers and takes the token (it refuses an empty list of events) |
+| `status`, with `password_file` | also `GET /api/device/info` and `/api/device/version` of the private API, for the Linkr's model, serial number and firmware version (`device`) |
 | `snapshot` | `GET /api/public/snapshot` |
 | `keyboard.type` | `["text", ...]` events of at most 30 characters, with `["delay", 1000]` between them |
 | `keyboard.press`, `.down`, `.up` | `["keyboard", code, pressed]`, with browser key codes |
@@ -173,6 +174,12 @@ Mounting takes only a file name: the page offers no choice of CD or
 stick, and no read-only setting. Each of these answers `{"code": 0,
 "data": {}}` on success. The list's `md5` is empty even for an image
 uploaded with one, so it cannot say whether an image is already there.
+
+**The Linkr itself.** With the same login, `GET /api/device/info` answers
+the model, serial number (`sn`) and MAC addresses, and `GET
+/api/device/version` the firmware version, which the web interface shows
+next to the latest one Radxa offer. The Linkr in front of the T14s Gen 7
+says 1.0.0, while Radxa's latest is 1.6.0.
 
 **How the target sees it**, tried with a Linux laptop as the target:
 

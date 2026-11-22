@@ -355,6 +355,23 @@ def small_chunks(monkeypatch):
     monkeypatch.setattr(linkr_storage, "CHUNK_SIZE", 1000)
 
 
+def test_status_with_the_password_says_what_the_linkr_is(storage_backend):
+    assert storage_backend.status()["device"] == {
+        "model": "Radxa Linkr", "serial": "5980169cce5397d5", "firmware": "1.0.0"}
+
+
+def test_status_without_the_password_says_nothing_of_the_linkr(backend):
+    assert "device" not in backend.status()
+
+
+def test_status_survives_a_wrong_password(tmp_path, device):
+    (tmp_path / "password").write_text("wrong\n")
+    backend = make_backend(tmp_path, device.url, password_file="password")
+    status = backend.status()
+    assert status["online"] is True
+    assert "error" in status["device"]
+
+
 def test_no_storage_without_a_password(backend):
     assert commands.STORAGE_STICK not in backend.capabilities
     with pytest.raises(Unsupported, match="password_file"):
