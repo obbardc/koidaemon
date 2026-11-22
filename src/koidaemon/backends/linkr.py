@@ -53,7 +53,9 @@ TEXT_PAUSE_MS = 1000
 
 # Wheel steps go from -this to this.
 MAX_WHEEL_STEP = 20
-MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04}
+# The Linkr's mouse has back and forward buttons too: a target sees bits
+# 0x08 and 0x10 as BTN_SIDE and BTN_EXTRA.
+MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04, "back": 0x08, "forward": 0x10}
 MOUSE_MODES = ("absolute", "relative")
 # A relative event moves the pointer by at most this on each axis: the
 # Linkr cuts a longer move short.
@@ -95,6 +97,7 @@ def text_events(text: str) -> list[list]:
 class LinkrBackend(Backend):
     name = "linkr"
     capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.MOUSE))
+    mouse_buttons = tuple(MOUSE_BUTTONS)
 
     def __init__(self, target: str, settings: Settings) -> None:
         super().__init__(target, settings)

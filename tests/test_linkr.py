@@ -220,6 +220,15 @@ def test_down_and_up_buttons(device, backend):
     assert [events[0][1] for events in device.controls] == [1, 5, 4, 0]
 
 
+def test_back_and_forward_buttons(device, backend):
+    assert backend.mouse_buttons == ("left", "right", "middle", "back", "forward")
+    backend.mouse_down("back")
+    backend.mouse_down("forward")
+    backend.mouse_up("back")
+    backend.mouse_up("forward")
+    assert [events[0][1] for events in device.controls] == [8, 24, 16, 0]
+
+
 def test_scroll(device, backend):
     # koid scrolls up for positive notches; the Linkr scrolls down for
     # positive wheelV.
