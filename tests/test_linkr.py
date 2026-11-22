@@ -246,14 +246,19 @@ def test_back_and_forward_buttons(device, backend):
 
 def test_scroll(device, backend):
     # koid scrolls up for positive notches; the Linkr scrolls down for
-    # positive wheelV.
-    backend.mouse_scroll(-45)
-    backend.mouse_scroll(3)
+    # positive wheelV, five notches a step.
+    backend.mouse_scroll(-225)
+    backend.mouse_scroll(15)
     assert [unpaced(events) for events in device.controls] == [[
         ["mouse_abs", 0, 0.0, 0.0, 20, 0], ["mouse_abs", 0, 0.0, 0.0, 20, 0],
         ["mouse_abs", 0, 0.0, 0.0, 5, 0],
     ], [["mouse_abs", 0, 0.0, 0.0, -3, 0]]]
 
+
+def test_scroll_rounds_to_whole_steps_but_never_to_none(device, backend):
+    for notches in (1, -2, 7, 8):
+        backend.mouse_scroll(notches)
+    assert [events[0][4] for events in device.controls] == [-1, 1, -1, -2]
 
 
 def test_scroll_by_nothing_sends_nothing(device, backend):
@@ -320,7 +325,7 @@ def test_relative_drag_by_nothing_sends_nothing(device, relative):
 
 def test_relative_click_and_scroll(device, relative):
     relative.mouse_click("left", 1, None, None)
-    relative.mouse_scroll(2)
+    relative.mouse_scroll(10)
     assert [unpaced(events) for events in device.controls] == [
         [["mouse_rel", 1, 0, 0, 0, 0], ["mouse_rel", 0, 0, 0, 0, 0]],
         [["mouse_rel", 0, 0, 0, -2, 0]],

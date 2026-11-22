@@ -53,6 +53,9 @@ TEXT_PAUSE_MS = 1000
 
 # Wheel steps go from -this to this.
 MAX_WHEEL_STEP = 20
+# A target sees each wheel step as this many notches of a wheel, whatever
+# the Linkr's own wheel settings say.
+NOTCHES_PER_WHEEL_STEP = 5
 # The Linkr's mouse has back and forward buttons too: a target sees bits
 # 0x08 and 0x10 as BTN_SIDE and BTN_EXTRA.
 MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04, "back": 0x08, "forward": 0x10}
@@ -365,15 +368,18 @@ class LinkrBackend(Backend):
     def mouse_scroll(self, notches: int) -> None:
         # koid's positive notches scroll up, as with a USB wheel; the
         # Linkr's wheelV scrolls down when positive, as Radxa's own client
-        # (radxa-linkr/linkr-skills) documents it.
+        # (radxa-linkr/linkr-skills) documents it.  A step is five
+        # notches, so the nearest number of steps, but never none.
+        steps = round(notches / NOTCHES_PER_WHEEL_STEP)
+        if notches and not steps:
+            steps = 1 if notches > 0 else -1
         events = []
-        remaining = notches
+        remaining = steps
         while remaining:
             step = max(-MAX_WHEEL_STEP, min(MAX_WHEEL_STEP, remaining))
             events.append(self._mouse_event(-step))
             remaining -= step
         self._paced_control(events)
-
 
     # ------------------------------------------------------------------
     # USB storage
