@@ -61,9 +61,10 @@ MAX_MOUSE_STEP = 127
 # How far each relative event moves by default.  Small steps keep a
 # target's pointer acceleration from scaling them much.
 MOUSE_STEP = 16
-# The Linkr loses relative events sent closer together than about 10 ms,
-# so each one is followed by a delay of this, in milliseconds.
-MOUSE_STEP_DELAY_MS = 20
+# The Linkr loses key and mouse events sent closer together than about
+# 10 ms, so in a request of several each is followed by a delay of this,
+# in milliseconds.
+EVENT_DELAY_MS = 20
 
 # Pause between the clicks of a double click.
 CLICK_INTERVAL = 0.05
@@ -183,6 +184,26 @@ class LinkrBackend(Backend):
             message = result.get("message") if isinstance(result, dict) else None
             raise BackendError("%s: %s" % (self.url, message or "the command failed"))
 
+    def _paced_control(self, events: list[list]) -> None:
+        """Send key or mouse events, spaced out.
+
+        The Linkr loses events sent too close together, so when there are
+        several each is followed by a delay.  The Linkr answers before it
+        has played them, so wait them out too, or a snapshot straight
+        after a move would catch the pointer on its way.
+        """
+        if not events:
+            # Nothing to do, and the Linkr refuses an empty list.
+            return
+        if len(events) == 1:
+            self._control(events)
+            return
+        paced: list[list] = []
+        for event in events:
+            paced += [event, ["delay", EVENT_DELAY_MS]]
+        self._control(paced)
+        time.sleep(len(events) * EVENT_DELAY_MS / 1000)
+
     # ------------------------------------------------------------------
     # Status and screen
     # ------------------------------------------------------------------
@@ -236,7 +257,7 @@ class LinkrBackend(Backend):
             codes = [_web_code(usage) for usage in usages]
             events += [["keyboard", code, True] for code in codes]
             events += [["keyboard", code, False] for code in reversed(codes)]
-        self._control(events)
+        self._paced_control(events)
 
     def key_down(self, usage: int) -> None:
         self._control([["keyboard", _web_code(usage), True]])
@@ -253,26 +274,6 @@ class LinkrBackend(Backend):
             return ["mouse_rel", self._buttons, 0, 0, wheel, 0]
         x, y = self._position
         return ["mouse_abs", self._buttons, x, y, wheel, 0]
-
-    def _mouse_control(self, events: list[list]) -> None:
-        """Send mouse events, spaced out if they are relative.
-
-        A relative mouse loses events sent too close together, so each is
-        followed by a delay.  The Linkr answers before it has played them,
-        so wait them out too, or a snapshot straight after a move would
-        catch the pointer on its way.
-        """
-        if not events:
-            # Nothing to do, and the Linkr refuses an empty list.
-            return
-        if self.mouse_mode != "relative":
-            self._control(events)
-            return
-        paced: list[list] = []
-        for event in events:
-            paced += [event, ["delay", MOUSE_STEP_DELAY_MS]]
-        self._control(paced)
-        time.sleep(len(events) * MOUSE_STEP_DELAY_MS / 1000)
 
     def _relative_moves(self, dx: int, dy: int, step: int) -> list[list]:
         """Relative events that move by (dx, dy), at most step at a time."""
@@ -304,7 +305,7 @@ class LinkrBackend(Backend):
             # screen, and count from there.
             events = self._relative_moves(-width, -height, MAX_MOUSE_STEP) \
                 + self._relative_moves(x, y, self.mouse_step)
-        self._mouse_control(events)
+        self._paced_control(events)
         self._pixels = (x, y)
 
     def mouse_click(self, button: str, count: int, x: int | None, y: int | None) -> None:
@@ -317,15 +318,15 @@ class LinkrBackend(Backend):
             self._buttons |= bit
             down = self._mouse_event()
             self._buttons &= ~bit
-            self._mouse_control([down, self._mouse_event()])
+            self._paced_control([down, self._mouse_event()])
 
     def mouse_down(self, button: str) -> None:
         self._buttons |= MOUSE_BUTTONS[button]
-        self._mouse_control([self._mouse_event()])
+        self._paced_control([self._mouse_event()])
 
     def mouse_up(self, button: str) -> None:
         self._buttons &= ~MOUSE_BUTTONS[button]
-        self._mouse_control([self._mouse_event()])
+        self._paced_control([self._mouse_event()])
 
     def mouse_scroll(self, notches: int) -> None:
         # koid's positive notches scroll up, as with a USB wheel; the
@@ -337,7 +338,7 @@ class LinkrBackend(Backend):
             step = max(-MAX_WHEEL_STEP, min(MAX_WHEEL_STEP, remaining))
             events.append(self._mouse_event(-step))
             remaining -= step
-        self._mouse_control(events)
+        self._paced_control(events)
 
 
     # ------------------------------------------------------------------

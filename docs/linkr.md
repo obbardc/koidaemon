@@ -57,9 +57,12 @@ Every request carries `Authorization: token TOKEN`.
 | `keyboard.type` | `["text", ...]` events of at most 30 characters, with `["delay", 1000]` between them |
 | `keyboard.press`, `.down`, `.up` | `["keyboard", code, pressed]`, with browser key codes |
 | `mouse.*` | `["mouse_abs", buttons, x, y, wheel, 0]`, with x and y from 0 to 1, and a wheel step of at most 20 that scrolls down when positive (the opposite of koid's notches) |
-| `mouse.*`, with `mouse = "relative"` | `["mouse_rel", buttons, dx, dy, wheel, 0]`, each followed by `["delay", 20]`, with a move of at most 127 pixels on each axis |
+| `mouse.*`, with `mouse = "relative"` | `["mouse_rel", buttons, dx, dy, wheel, 0]`, with a move of at most 127 pixels on each axis |
 
 Every event goes to `POST /api/public/control` as `{"events": [...]}`.
+When a request has more than one key or mouse event, each is followed by
+`["delay", 20]`, and koid waits for them to play before it answers (see
+below).
 Radxa advise a pause of about a second after every 30 or so characters
 typed, so typing long text is slow: about a second for every 30
 characters.
@@ -94,6 +97,10 @@ What a real Linkr does with relative events, tried in ThinkPad Setup:
 - It loses events sent closer together than about 10 ms: of 40 events
   sent with no delay or with 5 ms between them, some went missing, and
   with 10 ms or more none did. koid puts a delay of 20 ms after each.
+  The same goes for keys: in ThinkPad Setup, of 40 presses of the down
+  arrow sent five to a request with nothing between them, 14 arrived,
+  and with 20 ms between them all 40 did, so koid spaces out the events
+  of `keyboard.press` and of every mouse command too.
 - It answers a request before playing its events, so koid waits for
   those delays before it answers too. Otherwise a snapshot taken straight
   after a move would catch the pointer on its way.

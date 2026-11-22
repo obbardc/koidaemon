@@ -27,9 +27,26 @@ def device():
         yield fake
 
 
+@pytest.fixture(autouse=True)
+def slept(monkeypatch):
+    """What the backend slept, in seconds, without sleeping."""
+    slept = []
+    monkeypatch.setattr(linkr.time, "sleep", slept.append)
+    return slept
+
+
 @pytest.fixture
 def backend(tmp_path, device):
     return make_backend(tmp_path, device.url)
+
+
+def unpaced(events):
+    """Several events without the delays between them, checking each is
+    followed by one; a single event goes alone."""
+    if len(events) == 1:
+        return events
+    assert events[1::2] == [["delay", linkr.EVENT_DELAY_MS]] * (len(events) // 2)
+    return events[0::2]
 
 
 # ----------------------------------------------------------------------
@@ -145,14 +162,17 @@ def test_type_text_it_cannot(device, backend):
     assert device.controls == []
 
 
-def test_press(device, backend):
+def test_press(device, backend, slept):
     backend.press([keys.parse_combination("ctrl+alt+delete"), [keys.usage_for_name("enter")]])
-    assert device.controls == [[
+    # Spaced out, as a Linkr loses keys sent back to back.
+    assert [unpaced(events) for events in device.controls] == [[
         ["keyboard", "ControlLeft", True], ["keyboard", "AltLeft", True],
         ["keyboard", "Delete", True], ["keyboard", "Delete", False],
         ["keyboard", "AltLeft", False], ["keyboard", "ControlLeft", False],
         ["keyboard", "Enter", True], ["keyboard", "Enter", False],
     ]]
+    # koid waits for the Linkr to play them before it answers.
+    assert slept == [8 * linkr.EVENT_DELAY_MS / 1000]
 
 
 def test_down_and_up(device, backend):
@@ -178,7 +198,7 @@ def test_move_takes_a_snapshot_for_the_screen_size(device, backend):
 def test_click(device, backend):
     backend.snapshot()
     backend.mouse_click("left", 2, 0, 1079)
-    assert device.controls == [
+    assert [unpaced(events) for events in device.controls] == [
         [["mouse_abs", 0, 0.0, 1.0, 0, 0]],
         [["mouse_abs", 1, 0.0, 1.0, 0, 0], ["mouse_abs", 0, 0.0, 1.0, 0, 0]],
         [["mouse_abs", 1, 0.0, 1.0, 0, 0], ["mouse_abs", 0, 0.0, 1.0, 0, 0]],
@@ -188,7 +208,7 @@ def test_click(device, backend):
 def test_click_where_the_pointer_is_needs_no_snapshot(device, backend):
     backend.mouse_click("right", 1, None, None)
     assert device.snapshots == 0
-    assert device.controls == [[["mouse_abs", 2, 0.0, 0.0, 0, 0],
+    assert [unpaced(events) for events in device.controls] == [[["mouse_abs", 2, 0.0, 0.0, 0, 0],
                                 ["mouse_abs", 0, 0.0, 0.0, 0, 0]]]
 
 
@@ -205,7 +225,7 @@ def test_scroll(device, backend):
     # positive wheelV.
     backend.mouse_scroll(-45)
     backend.mouse_scroll(3)
-    assert device.controls == [[
+    assert [unpaced(events) for events in device.controls] == [[
         ["mouse_abs", 0, 0.0, 0.0, 20, 0], ["mouse_abs", 0, 0.0, 0.0, 20, 0],
         ["mouse_abs", 0, 0.0, 0.0, 5, 0],
     ], [["mouse_abs", 0, 0.0, 0.0, -3, 0]]]
@@ -220,20 +240,10 @@ def test_scroll_by_nothing_sends_nothing(device, backend):
 # Relative mouse
 
 @pytest.fixture
-def relative(tmp_path, device, monkeypatch):
-    slept = []
-    monkeypatch.setattr(linkr.time, "sleep", slept.append)
+def relative(tmp_path, device):
     backend = make_backend(tmp_path, device.url, mouse="relative", mouse_step=100)
-    backend.slept = slept
     device.screen = (300, 200)
     return backend
-
-
-def unpaced(events):
-    """The events without the delays between them, checking each is
-    followed by one."""
-    assert events[1::2] == [["delay", linkr.MOUSE_STEP_DELAY_MS]] * (len(events) // 2)
-    return events[0::2]
 
 
 def test_relative_settings(tmp_path):
@@ -244,7 +254,7 @@ def test_relative_settings(tmp_path):
             make_backend(tmp_path, "https://linkr.lab", mouse="relative", mouse_step=step)
 
 
-def test_relative_move_goes_by_the_corner(device, relative):
+def test_relative_move_goes_by_the_corner(device, relative, slept):
     relative.mouse_move(250, 150)
     assert device.snapshots == 1
     [events] = device.controls
@@ -255,7 +265,7 @@ def test_relative_move_goes_by_the_corner(device, relative):
         ["mouse_rel", 0, 50, 0, 0, 0],
     ]
     # koid waits for the Linkr to play the events before it answers.
-    assert relative.slept == [6 * linkr.MOUSE_STEP_DELAY_MS / 1000]
+    assert slept == [6 * linkr.EVENT_DELAY_MS / 1000]
 
 
 def test_relative_move_off_the_screen_stops_at_its_edge(device, relative):
