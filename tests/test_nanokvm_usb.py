@@ -141,8 +141,36 @@ def test_status(chip, backend):
         "caps_lock": False,
         "scroll_lock": False,
         "video": {"width": 1920, "height": 1080},
+        "chip": {
+            "mode": 2,
+            "serial_mode": 0x80,
+            "address": 0,
+            "baud": 57600,
+            "usb_id": "359f:3102",
+            "manufacturer": "Sipeed",
+            "product": "NanoKVM-USB",
+            "serial_number": "BA1422635QORFPJWT",
+        },
     }
-    assert chip.frames == [(nanokvm_usb.CMD_GET_INFO, b"")]
+    assert [command for command, data in chip.frames] == [
+        nanokvm_usb.CMD_GET_INFO, nanokvm_usb.CMD_GET_PARA_CFG,
+        nanokvm_usb.CMD_GET_USB_STRING, nanokvm_usb.CMD_GET_USB_STRING,
+        nanokvm_usb.CMD_GET_USB_STRING,
+    ]
+
+
+def test_status_without_the_chip_config(chip, backend, monkeypatch):
+    real = backend._command
+
+    def refuse_config(command, data=b""):
+        if command == nanokvm_usb.CMD_GET_PARA_CFG:
+            raise BackendError("the NanoKVM-USB refused the command: x")
+        return real(command, data)
+
+    monkeypatch.setattr(backend, "_command", refuse_config)
+    status = backend.status()
+    assert status["usb_connected"] is True
+    assert status["chip"] == {"error": "the NanoKVM-USB refused the command: x"}
 
 
 def test_no_answer(chip, backend):

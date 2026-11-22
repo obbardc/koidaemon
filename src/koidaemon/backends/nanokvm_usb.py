@@ -54,6 +54,15 @@ CMD_KEYBOARD = 0x02
 CMD_KEYBOARD_MEDIA = 0x03
 CMD_MOUSE_ABSOLUTE = 0x04
 CMD_MOUSE_RELATIVE = 0x05
+CMD_GET_PARA_CFG = 0x08
+CMD_GET_USB_STRING = 0x0A
+
+# GET_PARA_CFG's answer is this long.  The fields koid reports are the
+# chip's modes, its serial address and baud rate, and the USB IDs the
+# target sees; the rest are timings, filters and reserved bytes.
+PARA_CFG_SIZE = 50
+# GET_USB_STRING takes which string to read.
+USB_STRINGS = (("manufacturer", 0), ("product", 1), ("serial_number", 2))
 
 # The chip answers each command with the same command plus this.
 ANSWER = 0x80
@@ -341,7 +350,35 @@ class NanoKVMUSBBackend(Backend):
             "caps_lock": bool(leds & 0x02),
             "scroll_lock": bool(leds & 0x04),
             "video": {"width": self.width, "height": self.height},
+            "chip": self._chip_config(),
         }
+
+    def _chip_config(self) -> dict:
+        """How the chip is set up, or the error reading it.
+
+        Only reported: the chip is not worth failing status over.
+        """
+        try:
+            config = self._command(CMD_GET_PARA_CFG)
+            if len(config) < PARA_CFG_SIZE:
+                raise BackendError("the NanoKVM-USB sent a short answer to GET_PARA_CFG")
+            chip = {
+                "mode": config[0],
+                "serial_mode": config[1],
+                "address": config[2],
+                "baud": int.from_bytes(config[3:7], "big"),
+                # The USB IDs, unlike the other numbers, are little-endian.
+                "usb_id": "%04x:%04x" % (int.from_bytes(config[11:13], "little"),
+                                         int.from_bytes(config[13:15], "little")),
+            }
+            for name, which in USB_STRINGS:
+                # The answer is which string, its length and the string.
+                answer = self._command(CMD_GET_USB_STRING, bytes([which]))
+                chip[name] = answer[2:2 + answer[1]].decode("ascii", "replace") \
+                    if len(answer) >= 2 else ""
+            return chip
+        except BackendError as error:
+            return {"error": str(error)}
 
     def snapshot(self) -> Snapshot:
         if not os.access(self.video, os.F_OK):

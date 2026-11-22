@@ -17,6 +17,12 @@ from koidaemon.backends import nanokvm_usb
 # num lock on.
 INFO = bytes([0x38, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00])
 
+# GET_PARA_CFG's and GET_USB_STRING's answers from the same NanoKVM-USB.
+PARA_CFG = bytes.fromhex(
+    "028000 0000e100 0800 0003 9f35 0231 0000 0001 00 0d00000000000000"
+    "0000000000000000 87 00 000000000000000000000000")
+USB_STRINGS = {0: b"Sipeed", 1: b"NanoKVM-USB", 2: b"BA1422635QORFPJWT"}
+
 
 class FakeCH9329:
     """Answers frames written to the pty's other end, and records them."""
@@ -72,15 +78,22 @@ class FakeCH9329:
                 command, data, used = decoded
                 buffer = buffer[used:]
                 self.frames.append((command, data))
-                self._answer(command)
+                self._answer(command, data)
 
-    def _answer(self, command: int) -> None:
+    def _answer(self, command: int, data: bytes) -> None:
         if self.status is None:
             return
         if self.status != nanokvm_usb.STATUS_OK:
             frame = nanokvm_usb.encode_frame(command | 0xC0, bytes([self.status]))
         elif command == nanokvm_usb.CMD_GET_INFO:
             frame = nanokvm_usb.encode_frame(command | 0x80, self.info)
+        elif command == nanokvm_usb.CMD_GET_PARA_CFG:
+            frame = nanokvm_usb.encode_frame(command | 0x80, PARA_CFG)
+        elif command == nanokvm_usb.CMD_GET_USB_STRING:
+            which = data[0]
+            string = USB_STRINGS[which]
+            frame = nanokvm_usb.encode_frame(command | 0x80,
+                                             bytes([which, len(string)]) + string)
         else:
             frame = nanokvm_usb.encode_frame(command | 0x80, bytes([self.status]))
         os.write(self.master, frame)

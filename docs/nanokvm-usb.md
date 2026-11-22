@@ -74,7 +74,7 @@ answer.
 
 | Command | Frame |
 |---|---|
-| `status` | `0x01` GET_INFO: chip version, whether the target has found the USB keyboard and mouse, and its lock lights |
+| `status` | `0x01` GET_INFO: chip version, whether the target has found the USB keyboard and mouse, and its lock lights; then `0x08` GET_PARA_CFG and `0x0A` GET_USB_STRING for `chip` |
 | `keyboard.*` | `0x02`: an 8-byte keyboard report, sent for every key going down or up |
 | `keyboard.media` | `0x03`: report 2, three bytes of media and browser key bits, or report 1, one byte of system key bits (power, sleep, wake); each key is sent pressed and then released |
 | `mouse.*` | `0x04`: buttons, a position scaled to 0..4095, and a wheel step of at most 127 |
@@ -94,6 +94,26 @@ and released too quickly: the Dragon Q8B's UEFI lost most of a run of
 arrow keys sent back to back, and some at 20 ms apart. So koid leaves
 `key_interval` (50 ms) after every report, which makes typing take about
 a tenth of a second a character. Raise it if keys still go missing.
+
+## The chip's settings
+
+`status` has a `chip` object with how the CH9329 is set up, as Sipeed
+left it:
+
+```json
+"chip": {"mode": 2, "serial_mode": 128, "address": 0, "baud": 57600, "usb_id": "359f:3102", "manufacturer": "Sipeed", "product": "NanoKVM-USB", "serial_number": "BA1422635QORFPJWT"}
+```
+
+`mode` and `serial_mode` are the chip's own numbers. `usb_id` and the
+strings are what the target sees its keyboard and mouse as. If the chip
+cannot be asked, `chip` is `{"error": "..."}` and the rest of `status`
+still stands.
+
+koid cannot change these settings or put the chip back to its factory
+settings, on purpose. The chip's factory baud rate is 9600, and Sipeed
+set the NanoKVM-USB's to 57600, so going back to factory settings would
+leave koid, and Sipeed's own client, unable to talk to it until it was
+set again.
 
 ## Relative mouse
 

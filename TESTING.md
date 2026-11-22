@@ -30,3 +30,6 @@ session on the RB3gen2, a modifier pressed on its own also works:
       GNOME volume OSD and `calculator` opens a calculator
 - [ ] `mouse = "relative"`: whether a move lands where it should with
       GNOME's flat acceleration profile, and in a UEFI with a pointer
+- [ ] `status`'s `chip.usb_id`: that it matches the IDs the target
+      sees (`idVendor` and `idProduct` in sysfs), which tells whether the
+      byte order is right
