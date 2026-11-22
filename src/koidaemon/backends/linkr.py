@@ -68,6 +68,17 @@ MOUSE_STEP = 16
 # in milliseconds.
 EVENT_DELAY_MS = 20
 
+# The media and system keys a Linkr can press, as browser key codes.  It
+# has no consumer or system control device, but these are on the
+# keyboard's own page; it accepts other codes, such as MediaPlayPause,
+# and sends nothing.
+MEDIA_CODES = {
+    "volumeup": "AudioVolumeUp",
+    "volumedown": "AudioVolumeDown",
+    "mute": "AudioVolumeMute",
+    "power": "Power",
+}
+
 # Pause between the clicks of a double click.
 CLICK_INTERVAL = 0.05
 
@@ -96,7 +107,8 @@ def text_events(text: str) -> list[list]:
 
 class LinkrBackend(Backend):
     name = "linkr"
-    capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.MOUSE))
+    capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.KEYBOARD_MEDIA,
+                              commands.MOUSE))
     mouse_buttons = tuple(MOUSE_BUTTONS)
 
     def __init__(self, target: str, settings: Settings) -> None:
@@ -275,6 +287,17 @@ class LinkrBackend(Backend):
 
     def key_up(self, usage: int) -> None:
         self._control([["keyboard", _web_code(usage), False]])
+
+    def media_press(self, names: list[str]) -> None:
+        lacking = [name for name in names if name not in MEDIA_CODES]
+        if lacking:
+            raise Unsupported("a Linkr cannot press %s; only %s"
+                              % (", ".join(lacking), ", ".join(MEDIA_CODES)))
+        events = []
+        for name in names:
+            events += [["keyboard", MEDIA_CODES[name], True],
+                       ["keyboard", MEDIA_CODES[name], False]]
+        self._paced_control(events)
 
     # ------------------------------------------------------------------
     # Mouse

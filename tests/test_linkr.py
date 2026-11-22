@@ -9,7 +9,7 @@ import pytest
 from koidaemon import keys
 from koidaemon.backends import linkr
 from koidaemon.backends.base import Settings
-from koidaemon.errors import BackendError, ConfigError, InvalidRequest
+from koidaemon.errors import BackendError, ConfigError, InvalidRequest, Unsupported
 
 from fake_kvmd import make_jpeg
 from fake_linkr import FakeLinkr
@@ -182,6 +182,21 @@ def test_down_and_up(device, backend):
                                [["keyboard", "ShiftRight", False]]]
 
 
+def test_media_keys(device, backend):
+    assert "keyboard.media" in backend.capabilities
+    backend.media_press(["volumeup", "power"])
+    assert [unpaced(events) for events in device.controls] == [[
+        ["keyboard", "AudioVolumeUp", True], ["keyboard", "AudioVolumeUp", False],
+        ["keyboard", "Power", True], ["keyboard", "Power", False],
+    ]]
+
+
+def test_media_keys_it_lacks_are_refused_before_any_is_pressed(device, backend):
+    with pytest.raises(Unsupported, match="cannot press playpause, sleep"):
+        backend.media_press(["mute", "playpause", "sleep"])
+    assert device.controls == []
+
+
 # ----------------------------------------------------------------------
 # Mouse
 # ----------------------------------------------------------------------
@@ -320,7 +335,6 @@ import io
 
 from koidaemon import commands
 from koidaemon.backends import linkr_storage
-from koidaemon.errors import Unsupported
 from koidaemon.uploads import LocalImage, PushedImage
 
 

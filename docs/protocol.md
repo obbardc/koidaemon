@@ -167,6 +167,10 @@ with other keys or held down. The names, matched case-insensitively:
 - system: `power` (the target's power button, as its operating system
   sees it), `sleep` and `wake`
 
+A backend may have only some of them (the linkr backend has `volumeup`,
+`volumedown`, `mute` and `power`), and refuses a request with any it
+lacks as `unsupported`, before pressing any.
+
 ### mouse.move
 
 Needs `mouse`.

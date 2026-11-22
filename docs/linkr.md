@@ -14,6 +14,7 @@ and the wheel have not, and follow Radxa's
 | | |
 |---|---|
 | Keyboard | yes; text only as ASCII, tab and newline |
+| Media keys | `volumeup`, `volumedown`, `mute` and `power` only |
 | Mouse | yes, absolute pixels, or relative moves for targets that ignore an absolute mouse; left, right, middle, back and forward buttons |
 | Snapshot | yes; the Linkr sends JPEG, which koid turns into PNG unless asked not to |
 | USB storage | yes, as a USB stick the target can write to, with the Linkr's password |
@@ -57,6 +58,7 @@ Every request carries `Authorization: token TOKEN`.
 | `snapshot` | `GET /api/public/snapshot` |
 | `keyboard.type` | `["text", ...]` events of at most 30 characters, with `["delay", 1000]` between them |
 | `keyboard.press`, `.down`, `.up` | `["keyboard", code, pressed]`, with browser key codes |
+| `keyboard.media` | the same, with `AudioVolumeUp`, `AudioVolumeDown`, `AudioVolumeMute` and `Power`: the Linkr has no consumer or system control device, but these four are on its keyboard's own page; it accepts other codes, such as `MediaPlayPause` or `WakeUp`, and sends nothing |
 | `mouse.*` | `["mouse_abs", buttons, x, y, wheel, 0]`, with buttons left 1, right 2, middle 4, back 8 and forward 16 (Radxa document only the first three; a Linux target sees 8 and 16 as BTN_SIDE and BTN_EXTRA), with x and y from 0 to 1, and a wheel step of at most 20 that scrolls down when positive (the opposite of koid's notches) |
 | `mouse.*`, with `mouse = "relative"` | `["mouse_rel", buttons, dx, dy, wheel, 0]`, with a move of at most 127 pixels on each axis |
 
