@@ -30,7 +30,9 @@ KEYBOARD_MEDIA = "keyboard.media"
 MOUSE = "mouse"
 STORAGE_STICK = "storage.stick"
 STORAGE_CDROM = "storage.cdrom"
-ALL_CAPABILITIES = (SNAPSHOT, KEYBOARD, KEYBOARD_MEDIA, MOUSE, STORAGE_STICK, STORAGE_CDROM)
+KVM_RESET = "kvm.reset"
+ALL_CAPABILITIES = (SNAPSHOT, KEYBOARD, KEYBOARD_MEDIA, MOUSE, STORAGE_STICK, STORAGE_CDROM,
+                    KVM_RESET)
 
 # Not a capability of its own: commands that work with either kind of drive.
 ANY_STORAGE = "storage"
@@ -121,6 +123,8 @@ COMMANDS = {command.name: command for command in (
     )),
     Command("storage.eject", "disconnect the emulated USB drive", ANY_STORAGE),
     Command("storage.status", "what the emulated USB drive is presenting", ANY_STORAGE),
+
+    Command("kvm.reset", "reset the KVM device itself, not the target", KVM_RESET),
 )}
 
 

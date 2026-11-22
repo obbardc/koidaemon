@@ -165,6 +165,8 @@ class Daemon:
             backend.storage_eject()
         elif name == "storage.status":
             return backend.storage_status()
+        elif name == "kvm.reset":
+            backend.kvm_reset()
         else:
             # commands.validate() only lets known commands through.
             raise InvalidRequest("unknown command %r" % name)

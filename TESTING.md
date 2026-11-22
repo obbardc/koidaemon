@@ -33,3 +33,5 @@ session on the RB3gen2, a modifier pressed on its own also works:
 - [ ] `status`'s `chip.usb_id`: that it matches the IDs the target
       sees (`idVendor` and `idProduct` in sysfs), which tells whether the
       byte order is right
+- [ ] `kvm.reset`: tried with the target off; not yet whether the
+      target finds the keyboard and mouse again afterwards

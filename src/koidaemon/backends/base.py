@@ -169,6 +169,9 @@ class Backend:
     def mouse_scroll(self, notches: int) -> None:
         raise Unsupported("%s has no mouse" % self.name)
 
+    def kvm_reset(self) -> None:
+        raise Unsupported("%s cannot be reset" % self.name)
+
     def storage_insert(self, image: DiskImage, mode: str, writable: bool) -> dict:
         """Present an image: a koidaemon.uploads.DiskImage, whose contents
         are only to be read (with open()) if the KVM does not have it."""

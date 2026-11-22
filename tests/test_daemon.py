@@ -65,6 +65,7 @@ def served(daemon):
     ("mouse.click", {"button": "back"}, ("mouse_click", "back", 1, None, None)),
     ("mouse.scroll", {"notches": -3}, ("mouse_scroll", -3)),
     ("storage.eject", {}, ("storage_eject",)),
+    ("kvm.reset", {}, ("kvm_reset",)),
 ])
 def test_commands_reach_the_backend(daemon, backend, command, args, call):
     assert daemon.handle(request(command, **args)) == {"ok": True, "result": {}}

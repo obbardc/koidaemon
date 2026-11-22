@@ -204,6 +204,10 @@ def _koictl_parser() -> argparse.ArgumentParser:
                              "this machine's files (by default koid opens the file itself)")
     storage_actions.add_parser("eject", help="disconnect the drive")
     storage_actions.add_parser("status", help="what the drive is presenting")
+
+    kvm = commands.add_parser("kvm", help="the KVM device itself")
+    kvm_actions = kvm.add_subparsers(dest="action", required=True)
+    kvm_actions.add_parser("reset", help="reset the KVM device, not the target")
     return parser
 
 

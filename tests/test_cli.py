@@ -69,6 +69,7 @@ def koictl(socket_path, *argv, target="board"):
     (["mouse", "up"], ("mouse_up", "left")),
     (["mouse", "scroll", "-3"], ("mouse_scroll", -3)),
     (["storage", "eject"], ("storage_eject",)),
+    (["kvm", "reset"], ("kvm_reset",)),
 ])
 def test_commands(socket_path, backend, argv, call):
     assert koictl(socket_path, *argv) == 0

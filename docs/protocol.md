@@ -230,3 +230,10 @@ Needs `storage.stick` or `storage.cdrom`:
 ```json
 {"inserted": true, "image": "koid-0123456789ab-installer.iso", "mode": "cdrom", "writable": false}
 ```
+
+### kvm.reset
+
+Needs `kvm.reset`. Resets the KVM device itself, not the target, and
+returns once it answers again. Anything held with `keyboard.down` or
+`mouse.down` is let go. Use it when the KVM has stopped answering or
+the target has lost its keyboard and mouse.

@@ -162,15 +162,53 @@ def test_status(chip, backend):
 def test_status_without_the_chip_config(chip, backend, monkeypatch):
     real = backend._command
 
-    def refuse_config(command, data=b""):
+    def refuse_config(command, data=b"", timeout=None):
         if command == nanokvm_usb.CMD_GET_PARA_CFG:
             raise BackendError("the NanoKVM-USB refused the command: x")
-        return real(command, data)
+        return real(command, data, timeout)
 
     monkeypatch.setattr(backend, "_command", refuse_config)
     status = backend.status()
     assert status["usb_connected"] is True
     assert status["chip"] == {"error": "the NanoKVM-USB refused the command: x"}
+
+
+def test_reset(chip, backend):
+    backend.key_down(keys.LEFT_SHIFT)
+    backend.mouse_down("left")
+    chip.frames.clear()
+    backend.kvm_reset()
+    assert chip.frames == [(nanokvm_usb.CMD_RESET, b""), (nanokvm_usb.CMD_GET_INFO, b"")]
+    backend.mouse_move(0, 0)
+    assert chip.mouse_reports() == [mouse(0, 0, 0)]
+
+
+def test_reset_waits_for_the_chip(chip, backend, monkeypatch):
+    real = backend._command
+    tries = []
+
+    def slow_start(command, data=b"", timeout=None):
+        if command == nanokvm_usb.CMD_GET_INFO:
+            tries.append(timeout)
+            if len(tries) < 3:
+                raise BackendError("the NanoKVM-USB did not answer")
+        return real(command, data, timeout)
+
+    monkeypatch.setattr(backend, "_command", slow_start)
+    backend.kvm_reset()
+    assert tries == [nanokvm_usb.RESET_POLL] * 3
+
+
+def test_reset_gives_up(chip, backend, monkeypatch):
+    def no_answer(command, data=b"", timeout=None):
+        if command == nanokvm_usb.CMD_GET_INFO:
+            raise BackendError("the NanoKVM-USB did not answer")
+        return b"\x00"
+
+    monkeypatch.setattr(backend, "_command", no_answer)
+    backend.timeout = 0
+    with pytest.raises(BackendError, match="did not come back"):
+        backend.kvm_reset()
 
 
 def test_no_answer(chip, backend):

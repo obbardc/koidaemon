@@ -24,6 +24,7 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
 | Mouse | yes, absolute pixels, or relative moves for targets that ignore an absolute mouse |
 | Snapshot | yes, captured with GStreamer as JPEG, which koid turns into PNG unless asked not to |
 | USB storage | no; the NanoKVM-USB has none |
+| Reset | yes, the CH9329 chip |
 
 ## Configuration
 
@@ -79,6 +80,7 @@ answer.
 | `keyboard.media` | `0x03`: report 2, three bytes of media and browser key bits, or report 1, one byte of system key bits (power, sleep, wake); each key is sent pressed and then released |
 | `mouse.*` | `0x04`: buttons, a position scaled to 0..4095, and a wheel step of at most 127 |
 | `mouse.*`, with `mouse = "relative"` | `0x05`: buttons, a move of at most 127 on each axis, and a wheel step |
+| `kvm.reset` | `0x0F` RESET, then GET_INFO until the chip answers |
 | `snapshot` | `gst-launch-1.0 v4l2src ! image/jpeg ! multifilesink` |
 
 Every report the chip takes gives the whole state of the keyboard or
@@ -113,7 +115,7 @@ koid cannot change these settings or put the chip back to its factory
 settings, on purpose. The chip's factory baud rate is 9600, and Sipeed
 set the NanoKVM-USB's to 57600, so going back to factory settings would
 leave koid, and Sipeed's own client, unable to talk to it until it was
-set again.
+set again. `kvm.reset` only restarts the chip, which keeps its settings.
 
 ## Relative mouse
 

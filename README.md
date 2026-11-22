@@ -149,6 +149,7 @@ the details.
 | `storage.insert` | present a disk image as a USB stick or CD drive |
 | `storage.eject` | disconnect it |
 | `storage.status` | what is being presented |
+| `kvm.reset` | reset the KVM device itself, not the target |
 
 A command the target's KVM cannot do is refused as unsupported before the
 KVM is touched.

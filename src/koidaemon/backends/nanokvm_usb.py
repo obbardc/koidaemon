@@ -56,6 +56,7 @@ CMD_MOUSE_ABSOLUTE = 0x04
 CMD_MOUSE_RELATIVE = 0x05
 CMD_GET_PARA_CFG = 0x08
 CMD_GET_USB_STRING = 0x0A
+CMD_RESET = 0x0F
 
 # GET_PARA_CFG's answer is this long.  The fields koid reports are the
 # chip's modes, its serial address and baud rate, and the USB IDs the
@@ -63,6 +64,9 @@ CMD_GET_USB_STRING = 0x0A
 PARA_CFG_SIZE = 50
 # GET_USB_STRING takes which string to read.
 USB_STRINGS = (("manufacturer", 0), ("product", 1), ("serial_number", 2))
+# How long to wait for each GET_INFO while the chip starts again after a
+# reset.
+RESET_POLL = 0.2
 
 # The chip answers each command with the same command plus this.
 ANSWER = 0x80
@@ -171,7 +175,7 @@ def to_mouse_range(position: int, size: int) -> int:
 class NanoKVMUSBBackend(Backend):
     name = "nanokvm-usb"
     capabilities = frozenset((commands.SNAPSHOT, commands.KEYBOARD, commands.KEYBOARD_MEDIA,
-                              commands.MOUSE))
+                              commands.MOUSE, commands.KVM_RESET))
     mouse_buttons = tuple(MOUSE_BUTTONS)
 
     def __init__(self, target: str, settings: Settings) -> None:
@@ -264,8 +268,11 @@ class NanoKVMUSBBackend(Backend):
                           [iflag, oflag, cflag, lflag, BAUD_RATE, BAUD_RATE, cc])
         termios.tcflush(fd, termios.TCIOFLUSH)
 
-    def _command(self, command: int, data: bytes = b"") -> bytes:
-        """Send a command and return the data of the chip's answer."""
+    def _command(self, command: int, data: bytes = b"", timeout: float | None = None) -> bytes:
+        """Send a command and return the data of the chip's answer.
+
+        Waits timeout seconds for the answer, or the target's timeout.
+        """
         fd = self._port()
         # Anything left from before, such as an answer that came late,
         # would be taken for this one's.
@@ -280,7 +287,7 @@ class NanoKVMUSBBackend(Backend):
         except OSError as error:
             self.close()
             raise BackendError("cannot write to %s: %s" % (self.serial, error.strerror)) from error
-        return self._answer(fd, command)
+        return self._answer(fd, command, self.timeout if timeout is None else timeout)
 
     def _drain(self, fd: int) -> None:
         while True:
@@ -293,8 +300,8 @@ class NanoKVMUSBBackend(Backend):
                 self.close()
                 raise BackendError("cannot read %s: %s" % (self.serial, error.strerror)) from error
 
-    def _answer(self, fd: int, command: int) -> bytes:
-        deadline = time.monotonic() + self.timeout
+    def _answer(self, fd: int, command: int, timeout: float) -> bytes:
+        deadline = time.monotonic() + timeout
         while True:
             decoded = decode_frame(self._buffer)
             if decoded is not None:
@@ -379,6 +386,22 @@ class NanoKVMUSBBackend(Backend):
             return chip
         except BackendError as error:
             return {"error": str(error)}
+
+    def kvm_reset(self) -> None:
+        self._checked(CMD_RESET, b"")
+        # The target sees the keyboard and mouse go and come back, with
+        # nothing held.
+        self._modifiers = 0
+        self._keys = []
+        self._buttons = 0
+        deadline = time.monotonic() + self.timeout
+        while True:
+            try:
+                self._command(CMD_GET_INFO, timeout=RESET_POLL)
+                return
+            except BackendError:
+                if time.monotonic() >= deadline:
+                    raise BackendError("the NanoKVM-USB did not come back after its reset")
 
     def snapshot(self) -> Snapshot:
         if not os.access(self.video, os.F_OK):
