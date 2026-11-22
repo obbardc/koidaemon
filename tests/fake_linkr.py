@@ -148,7 +148,7 @@ class FakeLinkr:
         request = json.loads(body)
         expected = hashlib.sha256(("RADXA_FIXED_SALT_v1" + self.password).encode()).hexdigest()
         if request.get("username") != self.user or request.get("passwd") != expected:
-            self._json(handler, 200, {"code": 1, "message": "wrong user or password"})
+            self._json(handler, 200, {"code": 1, "message": "password incorrect"})
             return
         self.logins += 1
         jwt = "jwt-%d" % self.logins

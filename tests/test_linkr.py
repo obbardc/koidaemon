@@ -283,7 +283,7 @@ def test_unreadable_password_file(tmp_path, device):
 def test_wrong_password(tmp_path, device):
     (tmp_path / "password").write_text("wrong\n")
     backend = make_backend(tmp_path, device.url, password_file="password")
-    with pytest.raises(BackendError, match="wrong user or password"):
+    with pytest.raises(BackendError, match="password incorrect"):
         backend.storage_status()
 
 

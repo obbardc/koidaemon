@@ -19,23 +19,26 @@ Setup.
 
 ## linkr
 
-Nothing tried yet: the Linkr did not come up over USB-C (the host saw a
-"Realtek Linkr USB LAN" adapter but received no packets and got no DHCP
-lease). Before testing, it needs first-time setup in linkr.now and an
-access token (System Settings, Access Token).
+Tried with a Linkr on Ethernet, with its own power supply, in front of a
+ThinkPad T14s Gen 7 in ThinkPad Setup (drawn on HDMI at 1280x800). Over
+USB-C the host saw a "Realtek Linkr USB LAN" adapter but received no
+packets and got no DHCP lease.
 
-- [ ] Reaching the Linkr at all, over USB-C or Ethernet, and over HTTPS
-      with its certificate as `ca_file`
-- [ ] The access token: accepted, and a wrong one refused with 403
-- [ ] `status`: does an empty list of events to `/api/public/control`
-      work as a cheap check, or does the Linkr refuse it?
-- [ ] `snapshot`: JPEG, and the size koid reads from it
+- [x] Reaching the Linkr over Ethernet and HTTPS, with its self-signed
+      certificate (CN localhost) as `ca_file`
+- [x] The access token: accepted, and a wrong one refused with 403
+- [x] `status`: the Linkr refuses an empty list of events ("control
+      failed"), so koid sends a delay of 0
+- [x] `snapshot`: JPEG, and the size koid reads from it (1280x800 in
+      Setup). With no HDMI signal the Linkr answers "snapshot failed",
+      which koid passes on
 - [ ] `keyboard.type`: text, Enter and tab; long text over several
-      requests arrives in order (does a request wait for its events to
-      finish, or return at once?)
+      requests arrives in order (a request returns at once, in about half
+      a second even with a delay of 2000 in it)
 - [ ] `keyboard.press`, `.down`, `.up` with browser key codes, including
       ctrl+alt+delete
-- [ ] `mouse.move` and clicks land where they should
+- [ ] `mouse.move` and clicks land where they should. ThinkPad Setup
+      ignores `mouse_abs`, as it does the NanoKVM-USB's absolute mouse
 - [ ] `mouse.scroll`: does a positive `wheelV` scroll down, as Radxa's
       own client says?
 - [x] USB storage over the private API (docs/linkr.md): login, list,
@@ -48,6 +51,7 @@ access token (System Settings, Access Token).
       and inserted again without uploading
 - [ ] Why one mount sent straight after an unmount took about 90 seconds
       to reach the target (not seen through koid)
-- [ ] What a wrong password gets from a real Linkr
+- [x] What a wrong password gets from a real Linkr: HTTP 200 with code 1,
+      "password incorrect"
 - [ ] Uploading a full-size ISO: speed, and resuming an interrupted
       upload from `NextChunkIndex`
