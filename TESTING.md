@@ -8,7 +8,9 @@ page under [docs](docs/). This is what has not been tried yet.
 Tested so far: status, snapshots, and the keyboard (keys, typing,
 combinations) on a NanoKVM-USB in front of a Radxa Dragon Q8B, in its
 UEFI menus and shell; and snapshots, typing and single left clicks in
-front of a Qualcomm RB3gen2 at the GNOME login screen.
+front of a Qualcomm RB3gen2 at the GNOME login screen. In a GNOME
+session on the RB3gen2, a modifier pressed on its own also works:
+`keyboard press super` opens and closes the overview.
 
 - [x] `mouse.move`: a pixel position lands where it should on the
       snapshot, at 1920x1080 on the RB3gen2. (The device is told 0..4095
