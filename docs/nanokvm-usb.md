@@ -12,7 +12,8 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
 - in front of a Radxa Dragon Q8B: snapshots, and the keyboard in the
   board's UEFI setup menus and UEFI Shell, which has no pointer;
 - in front of a Qualcomm RB3gen2 running Debian with GNOME, at the GDM
-  login screen and in a session: snapshots at 1920x1080 and 1280x720;
+  login screen and in a session: snapshots at 1920x1080, 1280x720 and
+  1024x768, with the target at 1920x1080, 1280x1024 and 1024x768;
   clicks, double clicks and drags, which land on the pixel aimed at in
   the snapshot; all five buttons and the wheel; shift held across a
   click; typing mixed-case text with shifted symbols; media and system
@@ -136,6 +137,12 @@ the system keys' device has no `/dev/input/by-id/` link, only
 `/dev/input/eventN`, presumably because its name would clash with
 the media keys' one.
 
+`sleep` suspended the RB3gen2 (to `s2idle`, from GNOME), and nothing
+the NanoKVM-USB sends woke it again: not `wake`, other keys, the mouse,
+nor `kvm.reset` followed by a key. While it slept, `status` said
+`usb_connected: false`. Whether a target can be woken over USB at all
+depends on the target, but plan on a power cycle after `sleep`.
+
 ## Relative mouse
 
 The NanoKVM-USB is an absolute mouse by default, which puts the pointer
@@ -149,7 +156,8 @@ leaves it in the top-left corner, then moves it to the position in
 `mouse_step` steps. Two things follow:
 
 - The position is only right if the target moves its pointer one pixel
-  for each unit and its screen is the capture's `width` x `height`.
+  for each unit and its screen is the capture's `width` x `height`; see
+  [Video](#video) for a target at another resolution.
   Pointer acceleration breaks this: small steps keep it down, but turn it
   off on the target where possible (on GNOME,
   `gsettings set org.gnome.desktop.peripherals.mouse accel-profile flat`).
@@ -181,6 +189,24 @@ cannot tell this from a target showing a nearly black screen. Look at
 
 `status` always reports the configured `width` and `height` as the video
 size. The MS2130 does not tell koid the target's own resolution; it
-scales whatever the target sends to the size koid asks for. This has only
-been tried with a target sending 1920x1080, the same as the capture
-size, so how other modes are scaled is not known yet.
+scales whatever the target sends to fill the size koid asks for, without
+keeping its shape. A 1024x768 or 1280x1024 picture captured at 1920x1080
+comes out stretched sideways, with every part of the target's screen in
+the snapshot.
+
+The absolute mouse is not affected: it sends positions as a fraction
+of the screen, which is a fraction of the snapshot too, so a click lands
+on the pixel aimed at in the snapshot whatever the target's resolution.
+This was checked on the RB3gen2 at 1024x768 and 1280x1024, captured at
+1920x1080 and 1280x720.
+
+The relative mouse moves the target's own pixels, so with a target at
+1024x768 and a 1920x1080 capture, a move to (960, 540) ended at about
+(1800, 760) in the snapshot. For the relative mouse, set `width` and
+`height` to the target's resolution; the snapshot is then also
+undistorted. The MS2130 captures 1920x1080, 1280x1024, 1024x768, 1280x720
+and 800x600, and with a 1024x768 capture, relative moves landed within
+a couple of pixels.
+
+The NanoKVM-USB tells the target it is a Philips 230C monitor, which
+offers 1920x1080, 1280x1024, 1024x768 and 800x600, all at 60 Hz.

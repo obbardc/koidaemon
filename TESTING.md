@@ -11,10 +11,5 @@ UEFI menus and shell; and everything listed in
 [docs/nanokvm-usb.md](docs/nanokvm-usb.md) in front of a Qualcomm
 RB3gen2 running GNOME.
 
-- [ ] A target running at a different resolution from the capture size
-      (`width`/`height`); only the RB3gen2 at 1920x1080 has been tried,
-      captured at 1920x1080 and 1280x720
-- [ ] `mouse = "relative"` in a UEFI with a pointer
-- [ ] `keyboard.media sleep`: the RB3gen2 showed the report has the
-      bit, but it was not pressed, as the board might not have woken
-      again
+- [ ] `mouse = "relative"` in a UEFI with a pointer; no UEFI tried so
+      far has one
