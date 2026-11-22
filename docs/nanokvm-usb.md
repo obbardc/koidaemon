@@ -21,7 +21,7 @@ Tested on a Debian arm64 host with a NanoKVM-USB (CH9329 chip V1.8):
 |---|---|
 | Keyboard | yes, at most 6 keys besides the modifiers held at once |
 | Media keys | yes, all of `keyboard.media`'s |
-| Mouse | yes, absolute pixels |
+| Mouse | yes, absolute pixels, or relative moves for targets that ignore an absolute mouse |
 | Snapshot | yes, captured with GStreamer as JPEG, which koid turns into PNG unless asked not to |
 | USB storage | no; the NanoKVM-USB has none |
 
@@ -36,6 +36,8 @@ width = 1920                       # optional; default 1920
 height = 1080                      # optional; default 1080
 timeout = 10                       # optional; seconds
 key_interval = 0.05                # optional; seconds between key reports
+mouse = "absolute"                 # optional; or "relative"
+mouse_step = 16                    # optional; pixels per relative report, 1 to 127
 gst_launch = "gst-launch-1.0"      # optional; GStreamer's command
 ```
 
@@ -76,6 +78,7 @@ answer.
 | `keyboard.*` | `0x02`: an 8-byte keyboard report, sent for every key going down or up |
 | `keyboard.media` | `0x03`: report 2, three bytes of media and browser key bits, or report 1, one byte of system key bits (power, sleep, wake); each key is sent pressed and then released |
 | `mouse.*` | `0x04`: buttons, a position scaled to 0..4095, and a wheel step of at most 127 |
+| `mouse.*`, with `mouse = "relative"` | `0x05`: buttons, a move of at most 127 on each axis, and a wheel step |
 | `snapshot` | `gst-launch-1.0 v4l2src ! image/jpeg ! multifilesink` |
 
 Every report the chip takes gives the whole state of the keyboard or
@@ -91,6 +94,31 @@ and released too quickly: the Dragon Q8B's UEFI lost most of a run of
 arrow keys sent back to back, and some at 20 ms apart. So koid leaves
 `key_interval` (50 ms) after every report, which makes typing take about
 a tenth of a second a character. Raise it if keys still go missing.
+
+## Relative mouse
+
+The NanoKVM-USB is an absolute mouse by default, which puts the pointer
+exactly where asked, but some firmware and older operating systems only
+follow a relative mouse. For those, set `mouse = "relative"`.
+
+A relative mouse cannot say where the pointer is, only how far to move
+it. So for every `mouse.move` and every click with a position, koid
+first moves the pointer up and left by more than the whole screen, which
+leaves it in the top-left corner, then moves it to the position in
+`mouse_step` steps. Two things follow:
+
+- The position is only right if the target moves its pointer one pixel
+  for each unit and its screen is the capture's `width` x `height`.
+  Pointer acceleration breaks this: small steps keep it down, but turn it
+  off on the target where possible (on GNOME,
+  `gsettings set org.gnome.desktop.peripherals.mouse accel-profile flat`).
+  UEFI does not accelerate the pointer.
+- The pointer passes through the top-left corner on every move, which
+  opens the GNOME overview if its hot corner is on.
+
+While a button is held, a move goes from where the last one left the
+pointer instead, so that a drag does not drag to the corner. Clicks,
+holds and the wheel without a position do not move the pointer.
 
 ## Video
 

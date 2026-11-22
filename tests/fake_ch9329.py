@@ -51,6 +51,10 @@ class FakeCH9329:
         return [data for command, data in self.frames
                 if command == nanokvm_usb.CMD_MOUSE_ABSOLUTE]
 
+    def relative_reports(self) -> list[bytes]:
+        return [data for command, data in self.frames
+                if command == nanokvm_usb.CMD_MOUSE_RELATIVE]
+
     def _run(self) -> None:
         buffer = b""
         while not self._stop.is_set():

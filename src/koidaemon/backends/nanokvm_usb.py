@@ -53,6 +53,7 @@ CMD_GET_INFO = 0x01
 CMD_KEYBOARD = 0x02
 CMD_KEYBOARD_MEDIA = 0x03
 CMD_MOUSE_ABSOLUTE = 0x04
+CMD_MOUSE_RELATIVE = 0x05
 
 # The chip answers each command with the same command plus this.
 ANSWER = 0x80
@@ -97,6 +98,12 @@ REPORT_SIZES = {MEDIA_REPORT: 3, ACPI_REPORT: 1}
 # wheel steps are signed bytes.
 MOUSE_MAX = 4095
 MAX_WHEEL_STEP = 127
+# A relative report moves the pointer by signed bytes.
+MAX_MOUSE_STEP = 127
+MOUSE_MODES = ("absolute", "relative")
+# How far each relative report moves by default.  Small steps keep a
+# target's pointer acceleration from scaling them much.
+MOUSE_STEP = 16
 MOUSE_BUTTONS = {"left": 0x01, "right": 0x02, "middle": 0x04, "back": 0x08, "forward": 0x10}
 
 # Pause between the clicks of a double click.
@@ -167,7 +174,15 @@ class NanoKVMUSBBackend(Backend):
         self.timeout = settings.get_float("timeout", 10.0)
         self.key_interval = settings.get_float("key_interval", KEY_INTERVAL)
         self.gst_launch = settings.get_str("gst_launch", "gst-launch-1.0")
+        self.mouse_mode = settings.get_str("mouse", "absolute")
+        self.mouse_step = settings.get_int("mouse_step", MOUSE_STEP)
         settings.finish()
+        if self.mouse_mode not in MOUSE_MODES:
+            raise ConfigError("target %r: mouse must be %s"
+                              % (target, " or ".join(MOUSE_MODES)))
+        if not 1 <= self.mouse_step <= MAX_MOUSE_STEP:
+            raise ConfigError("target %r: mouse_step must be from 1 to %d"
+                              % (target, MAX_MOUSE_STEP))
         if self.width < 1 or self.height < 1:
             raise ConfigError("target %r: width and height must be positive" % target)
         if self.key_interval < 0:
@@ -191,6 +206,7 @@ class NanoKVMUSBBackend(Backend):
         description = super().describe()
         description["serial"] = str(self.serial)
         description["video"] = str(self.video)
+        description["mouse"] = self.mouse_mode
         return description
 
     def close(self) -> None:
@@ -436,15 +452,47 @@ class NanoKVMUSBBackend(Backend):
     # ------------------------------------------------------------------
 
     def _send_mouse(self, wheel: int = 0) -> None:
+        if self.mouse_mode == "relative":
+            self._send_relative(0, 0, wheel)
+            return
         x = to_mouse_range(self._position[0], self.width)
         y = to_mouse_range(self._position[1], self.height)
         data = bytes([0x02, self._buttons]) + x.to_bytes(2, "little") \
             + y.to_bytes(2, "little") + bytes([wheel & 0xFF])
         self._checked(CMD_MOUSE_ABSOLUTE, data)
 
+    def _send_relative(self, dx: int, dy: int, wheel: int = 0) -> None:
+        data = bytes([0x01, self._buttons, dx & 0xFF, dy & 0xFF, wheel & 0xFF])
+        self._checked(CMD_MOUSE_RELATIVE, data)
+
+    def _move_relative(self, dx: int, dy: int, step: int) -> None:
+        """Move by (dx, dy) in reports of at most step on each axis."""
+        while dx or dy:
+            x = max(-step, min(step, dx))
+            y = max(-step, min(step, dy))
+            self._send_relative(x, y)
+            dx -= x
+            dy -= y
+
     def mouse_move(self, x: int, y: int) -> None:
+        if self.mouse_mode == "absolute":
+            self._position = (x, y)
+            self._send_mouse()
+            return
+        x = min(max(x, 0), self.width - 1)
+        y = min(max(y, 0), self.height - 1)
+        if self._buttons:
+            # Dragging: going by the corner would drag there too, so move
+            # on from where the last move left the pointer.
+            self._move_relative(x - self._position[0], y - self._position[1],
+                                self.mouse_step)
+        else:
+            # A relative mouse cannot tell where the pointer is, so push
+            # it into the top-left corner first, by more than the whole
+            # screen, and count from there.
+            self._move_relative(-self.width, -self.height, MAX_MOUSE_STEP)
+            self._move_relative(x, y, self.mouse_step)
         self._position = (x, y)
-        self._send_mouse()
 
     def mouse_click(self, button: str, count: int, x: int | None, y: int | None) -> None:
         if x is not None:

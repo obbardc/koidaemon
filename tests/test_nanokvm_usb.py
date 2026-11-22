@@ -296,6 +296,64 @@ def test_scroll(chip, backend):
                                     mouse(0, 0, 0, -73)]
 
 
+def relative(buttons: int, dx: int, dy: int, wheel: int = 0) -> bytes:
+    return bytes([0x01, buttons, dx & 0xFF, dy & 0xFF, wheel & 0xFF])
+
+
+@pytest.fixture
+def relative_backend(tmp_path, chip):
+    backend = make_backend(tmp_path, chip.path, timeout=1, key_interval=0,
+                           width=300, height=200, mouse="relative", mouse_step=50)
+    yield backend
+    backend.close()
+
+
+def test_mouse_mode_settings(tmp_path):
+    backend = make_backend(tmp_path, "/dev/ttyACM2")
+    assert (backend.mouse_mode, backend.mouse_step) == ("absolute", nanokvm_usb.MOUSE_STEP)
+    assert backend.describe()["mouse"] == "absolute"
+    with pytest.raises(ConfigError, match="mouse must be absolute or relative"):
+        make_backend(tmp_path, "/dev/ttyACM2", mouse="sideways")
+    for step in (0, 128):
+        with pytest.raises(ConfigError, match="mouse_step must be from 1 to 127"):
+            make_backend(tmp_path, "/dev/ttyACM2", mouse="relative", mouse_step=step)
+
+
+def test_relative_move_goes_to_the_corner_first(chip, relative_backend):
+    relative_backend.mouse_move(120, 30)
+    assert chip.relative_reports() == [
+        relative(0, -127, -127), relative(0, -127, -73), relative(0, -46, 0),
+        relative(0, 50, 30), relative(0, 50, 0), relative(0, 20, 0),
+    ]
+    assert chip.mouse_reports() == []
+
+
+def test_relative_move_stays_on_the_screen(chip, relative_backend):
+    relative_backend.mouse_move(1000, -5)
+    assert chip.relative_reports()[3:] == [relative(0, 50, 0)] * 5 + [relative(0, 49, 0)]
+
+
+def test_relative_buttons_and_wheel(chip, relative_backend):
+    relative_backend.mouse_down("left")
+    relative_backend.mouse_click("right", 1, None, None)
+    relative_backend.mouse_up("left")
+    relative_backend.mouse_scroll(-2)
+    assert chip.relative_reports() == [
+        relative(1, 0, 0), relative(3, 0, 0), relative(1, 0, 0), relative(0, 0, 0),
+        relative(0, 0, 0, -2),
+    ]
+
+
+def test_relative_drag_moves_on_from_the_last_move(chip, relative_backend):
+    relative_backend.mouse_move(100, 100)
+    chip.frames.clear()
+    relative_backend.mouse_down("left")
+    relative_backend.mouse_move(40, 160)
+    assert chip.relative_reports() == [
+        relative(1, 0, 0), relative(1, -50, 50), relative(1, -10, 10),
+    ]
+
+
 # ----------------------------------------------------------------------
 # Snapshot
 # ----------------------------------------------------------------------

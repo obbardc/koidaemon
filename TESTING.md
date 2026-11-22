@@ -28,3 +28,5 @@ session on the RB3gen2, a modifier pressed on its own also works:
 - [ ] `keyboard.media`: the bit for each key is from the CH9329
       protocol and has not been tried, e.g. that `volumeup` shows the
       GNOME volume OSD and `calculator` opens a calculator
+- [ ] `mouse = "relative"`: whether a move lands where it should with
+      GNOME's flat acceleration profile, and in a UEFI with a pointer
